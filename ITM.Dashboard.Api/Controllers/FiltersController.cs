@@ -165,19 +165,44 @@ public class FiltersController : ControllerBase
         var dbInfo = DatabaseInfo.CreateDefault();
         await using var conn = new NpgsqlConnection(dbInfo.GetConnectionString());
         await conn.OpenAsync();
-
-        // 1. 제외할 컬럼 목록 정의
-        var excludedColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    
+        // 1. [수정] DB의 cgf_lot_uniformity_metrics 테이블에서 제외할 컬럼 목록을 가져옵니다.
+        var excludedColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var exclusionSql = "SELECT metric_name FROM public.cgf_lot_uniformity_metrics WHERE is_excluded = 'Y';";
+        await using (var cmd = new NpgsqlCommand(exclusionSql, conn))
+        await using (var reader = await cmd.ExecuteReaderAsync())
         {
-            "eqpid", "lotid", "waferid", "cassettercp", "stagercp", "stagegroup", "film", "point", "datetime", "serv_ts",
-            "gof", "x", "y", "x1", "diex", "diey", "dierow", "diecol", "dienum", "diepointtag", "z", "srvisz"
-            // 필요에 따라 여기에 더 많은 컬럼 추가 가능
-        };
-
-        // 2. 현재 필터 조건으로 WHERE 절 구성
+            while (await reader.ReadAsync())
+            {
+                excludedColumns.Add(reader.GetString(0));
+            }
+        }
+    
+        // 2. plg_wf_flat 테이블의 모든 숫자 타입 컬럼 목록을 가져옵니다.
+        var allNumericColumns = new List<string>();
+        var columnSql = @"
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name   = 'plg_wf_flat'
+              AND data_type IN ('integer', 'bigint', 'smallint', 'numeric', 'real', 'double precision');";
+        
+        await using (var cmd = new NpgsqlCommand(columnSql, conn))
+        await using (var reader = await cmd.ExecuteReaderAsync())
+        {
+            while (await reader.ReadAsync())
+            {
+                allNumericColumns.Add(reader.GetString(0));
+            }
+        }
+        
+        // 3. 코드에서 두 목록을 비교하여 제외되지 않은 숫자 컬럼만 필터링합니다.
+        var potentialMetrics = allNumericColumns.Where(c => !excludedColumns.Contains(c)).ToList();
+    
+        // 4. 현재 필터 조건으로 WHERE 절 구성
         var whereClauses = new List<string>();
         var parameters = new Dictionary<string, object>();
-
+    
         void AddCondition(string? value, string columnName)
         {
             if (!string.IsNullOrEmpty(value))
@@ -191,50 +216,29 @@ public class FiltersController : ControllerBase
         AddCondition(cassetteRcp, "cassettercp");
         AddCondition(stageGroup, "stagegroup");
         AddCondition(film, "film");
-
+    
         if (startDate.HasValue) { whereClauses.Add("serv_ts >= @startDate"); parameters["startDate"] = startDate.Value; }
         if (endDate.HasValue) { whereClauses.Add("serv_ts <= @endDate"); parameters["endDate"] = endDate.Value.AddDays(1).AddTicks(-1); }
-
+    
         string whereQuery = whereClauses.Any() ? "WHERE " + string.Join(" AND ", whereClauses) : "";
-
-        // 3. 테이블의 모든 숫자 타입 컬럼 목록 가져오기
-        var allNumericColumns = new List<string>();
-        var columnSql = @"
-            SELECT column_name
-            FROM information_schema.columns
-            WHERE table_schema = 'public'
-              AND table_name   = 'plg_wf_flat'
-              AND data_type IN ('integer', 'bigint', 'smallint', 'numeric', 'real', 'double precision');";
-
-        await using (var cmd = new NpgsqlCommand(columnSql, conn))
-        await using (var reader = await cmd.ExecuteReaderAsync())
-        {
-            while (await reader.ReadAsync())
-            {
-                allNumericColumns.Add(reader.GetString(0));
-            }
-        }
-
-        // 4. 제외 목록에 없는 컬럼들만 대상으로 유효성 검사
-        var potentialMetrics = allNumericColumns.Where(c => !excludedColumns.Contains(c)).ToList();
-
+    
+        // 5. 최종 후보 컬럼들에 대해 실제 데이터가 있는지 확인
         foreach (var metric in potentialMetrics)
         {
-            // [중요] SQL Injection을 방지하기 위해 컬럼 이름을 직접 쿼리에 넣지 않고 ""로 감쌉니다.
             var checkSql = $"SELECT 1 FROM public.plg_wf_flat {whereQuery} AND \"{metric}\" IS NOT NULL LIMIT 1;";
             await using var checkCmd = new NpgsqlCommand(checkSql, conn);
             foreach (var p in parameters)
             {
                 checkCmd.Parameters.AddWithValue(p.Key, p.Value);
             }
-
+    
             var result = await checkCmd.ExecuteScalarAsync();
             if (result != null && result != DBNull.Value)
             {
                 availableMetrics.Add(metric);
             }
         }
-
+    
         return Ok(availableMetrics.OrderBy(m => m));
     }
 
