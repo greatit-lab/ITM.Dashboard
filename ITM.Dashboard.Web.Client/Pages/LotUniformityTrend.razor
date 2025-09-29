@@ -96,10 +96,6 @@ else
     private async Task OnMetricChanged(string newMetric)
     {
         _selectedMetric = newMetric;
-        if (_isSearched)
-        {
-            await OnSearchClicked();
-        }
     }
 
     private async Task OnSiteChanged(string value)
@@ -163,16 +159,12 @@ else
         {
             await UpdateFilms();
         }
-        // ✅ [추가] StageGroup 선택이 완료되면 Metric 목록을 업데이트합니다.
         await UpdateAvailableMetricsAsync();
-        StateHasChanged();
     }
     private async Task OnFilmChanged(string value)
     {
         _selectedFilm = value;
-        // ✅ [추가] Film 선택이 변경되어도 Metric 목록을 다시 업데이트합니다.
         await UpdateAvailableMetricsAsync();
-        StateHasChanged();
     }
 
     // ✅ [추가] Y-Axis Metric 목록을 동적으로 가져오는 새로운 메서드
