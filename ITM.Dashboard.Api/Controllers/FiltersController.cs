@@ -111,7 +111,7 @@ public class FiltersController : ControllerBase
     {
         return GetEqpIdsBySource("public.plg_wf_flat", sdwt, null);
     }
-    
+
     [HttpGet("eqpidsbysite/{site}")]
     public Task<ActionResult<IEnumerable<string>>> GetEqpidsBySite(string site)
     {
@@ -127,10 +127,10 @@ public class FiltersController : ControllerBase
 
     [HttpGet("eqpids/error/{sdwt}")]
     public Task<ActionResult<IEnumerable<string>>> GetErrorEqpIds(string sdwt) => GetEqpIdsBySource("public.plg_error", sdwt, null);
-    
+
     [HttpGet("eqpidsbysite/error/{site}")]
     public Task<ActionResult<IEnumerable<string>>> GetErrorEqpIdsBySite(string site) => GetEqpIdsBySource("public.plg_error", null, site);
-    
+
     [HttpGet("eqpids/prealign/{sdwt}")]
     public Task<ActionResult<IEnumerable<string>>> GetPreAlignEqpIds(string sdwt) => GetEqpIdsBySource("public.plg_prealign", sdwt, null);
 
@@ -238,7 +238,6 @@ public class FiltersController : ControllerBase
         return Ok(availableMetrics.OrderBy(m => m));
     }
 
-    // ▼▼▼ [수정] 모든 필터 값을 받아 동적으로 쿼리하는 새로운 공용 메서드 ▼▼▼
     private async Task<ActionResult<IEnumerable<string>>> GetFilteredDistinctValues(
         string targetColumn,
         [FromQuery] string eqpid,
@@ -302,7 +301,6 @@ public class FiltersController : ControllerBase
         return Ok(results);
     }
 
-    // ▼▼▼ [수정] 각 필터 API가 새로운 공용 메서드를 호출하도록 변경 ▼▼▼
     [HttpGet("cassettercps")]
     public Task<ActionResult<IEnumerable<string>>> GetCassetteRcps([FromQuery] string eqpid, [FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate, [FromQuery] string? lotId, [FromQuery] int? waferId, [FromQuery] string? cassetteRcp, [FromQuery] string? stageRcp, [FromQuery] string? stageGroup, [FromQuery] string? film)
         => GetFilteredDistinctValues("cassettercp", eqpid, startDate, endDate, lotId, waferId, cassetteRcp, stageRcp, stageGroup, film);
