@@ -31,10 +31,10 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         // ▼▼▼ [핵심 수정 2/2] 데이터, 설정, 다크모드 상태가 실제로 변경되었을 때만 차트를 다시 그리도록 로직을 수정합니다. ▼▼▼
-        if (ChartData != null && ChartConfig != null && 
-            (firstRender || 
-             !object.ReferenceEquals(_cachedData, ChartData) || 
-             !object.ReferenceEquals(_cachedConfig, ChartConfig) || 
+        if (ChartData != null && ChartConfig != null &&
+            (firstRender ||
+             !object.ReferenceEquals(_cachedData, ChartData) ||
+             !object.ReferenceEquals(_cachedConfig, ChartConfig) ||
              _cachedDarkMode != IsDarkMode))
         {
             // JS Interop을 호출하여 차트를 생성하거나 업데이트합니다.
