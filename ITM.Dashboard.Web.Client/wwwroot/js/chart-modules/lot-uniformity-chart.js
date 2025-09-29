@@ -21,11 +21,6 @@ window.AmChartMakers.LotUniformityChart = {
             lineY: { visible: false }
         }));
 
-        const xAxis = chart.xAxes.push(am5xy.ValueAxis.new(root, {
-            renderer: am5xy.AxisRendererX.new(root, {}),
-            tooltip: am5.Tooltip.new(root, {})
-        }));
-
         // 1. xAxis를 기본 렌더러로 먼저 생성합니다.
         const xAxis = chart.xAxes.push(am5xy.ValueAxis.new(root, {
             renderer: am5xy.AxisRendererX.new(root, {}),
@@ -41,7 +36,7 @@ window.AmChartMakers.LotUniformityChart = {
             minGridDistance: 40,      // 눈금 최소 간격 유지
             minorGridEnabled: false   // 보조 눈금 비활성화
         });
-        
+
         // 3. 라벨의 표시 형식도 정수로 지정합니다.
         xAxis.get("renderer").labels.template.setAll({
             fill: textColor,
