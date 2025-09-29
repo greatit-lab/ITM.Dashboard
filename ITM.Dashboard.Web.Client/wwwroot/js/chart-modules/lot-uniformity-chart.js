@@ -25,7 +25,29 @@ window.AmChartMakers.LotUniformityChart = {
             renderer: am5xy.AxisRendererX.new(root, {}),
             tooltip: am5.Tooltip.new(root, {})
         }));
-        xAxis.get("renderer").labels.template.setAll({ fill: textColor });
+
+        // 1. xAxis를 기본 렌더러로 먼저 생성합니다.
+        const xAxis = chart.xAxes.push(am5xy.ValueAxis.new(root, {
+            renderer: am5xy.AxisRendererX.new(root, {}),
+            tooltip: am5.Tooltip.new(root, {})
+        }));
+
+        // ★★★ [핵심 수정] 축이 계산하는 값의 최대 정밀도를 0 (정수)으로 강제합니다. ★★★
+        // 이 설정이 소수점 눈금이 생성되는 것을 원천적으로 차단합니다.
+        xAxis.set("maxPrecision", 0);
+
+        // 2. 생성된 xAxis의 renderer에 필요한 설정을 단계적으로 적용합니다.
+        xAxis.get("renderer").setAll({
+            minGridDistance: 40,      // 눈금 최소 간격 유지
+            minorGridEnabled: false   // 보조 눈금 비활성화
+        });
+        
+        // 3. 라벨의 표시 형식도 정수로 지정합니다.
+        xAxis.get("renderer").labels.template.setAll({
+            fill: textColor,
+            numberFormat: "#"
+        });
+
         xAxis.children.push(am5.Label.new(root, { text: config.xTitle, x: am5.p50, centerX: am5.p50, fill: textColor }));
 
         const yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
@@ -47,7 +69,6 @@ window.AmChartMakers.LotUniformityChart = {
 
         waferIds.forEach(waferId => {
             const series = chart.series.push(am5xy.LineSeries.new(root, {
-                // ✅ [수정] 범례에 표시될 이름을 'Wafer'에서 'Slot'으로 변경합니다.
                 name: "Slot " + waferId,
                 xAxis: xAxis,
                 yAxis: yAxis,
@@ -55,7 +76,7 @@ window.AmChartMakers.LotUniformityChart = {
                 valueXField: "point",
                 tooltip: am5.Tooltip.new(root, {
                     pointerOrientation: "horizontal",
-                    labelText: "[bold]{name}:[/] {valueY.formatNumber('#.00')}"
+                    labelText: "[bold]{name}:[/]\nPoint: {valueX}\nValue: {valueY.formatNumber('#.00')}"
                 })
             }));
 
@@ -93,6 +114,8 @@ window.AmChartMakers.LotUniformityChart = {
         const sbxAxis = scrollbarX.chart.xAxes.push(am5xy.ValueAxis.new(root, { renderer: am5xy.AxisRendererX.new(root, {}) }));
         const sbyAxis = scrollbarX.chart.yAxes.push(am5xy.ValueAxis.new(root, { renderer: am5xy.AxisRendererY.new(root, {}) }));
 
+        sbxAxis.get("renderer").labels.template.setAll({ numberFormat: "#" });
+
         waferIds.forEach(waferId => {
             const sbSeries = scrollbarX.chart.series.push(am5xy.LineSeries.new(root, {
                 xAxis: sbxAxis, yAxis: sbyAxis, valueYField: "value", valueXField: "point"
@@ -108,6 +131,8 @@ window.AmChartMakers.LotUniformityChart = {
 
         const sbxAxis_y = scrollbarY.chart.xAxes.push(am5xy.ValueAxis.new(root, { renderer: am5xy.AxisRendererX.new(root, {}) }));
         const sbyAxis_y = scrollbarY.chart.yAxes.push(am5xy.ValueAxis.new(root, { renderer: am5xy.AxisRendererY.new(root, {}) }));
+
+        sbxAxis_y.get("renderer").labels.template.setAll({ numberFormat: "#" });
 
         waferIds.forEach(waferId => {
             const sbSeries = scrollbarY.chart.series.push(am5xy.LineSeries.new(root, {
