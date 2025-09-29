@@ -175,7 +175,7 @@ else
         var url = string.IsNullOrEmpty(_selectedSdwt)
             ? $"api/Filters/eqpidsbysite/prealign/{_selectedSite}"
             // sdwt가 선택되었을 때의 경로도 prealign 전용으로 수정
-            : $"api/Filters/eqpids/prealign/{_selectedSdwt}"; 
+            : $"api/Filters/eqpids/prealign/{_selectedSdwt}";
         _availableEqpIds = await client.GetFromJsonAsync<List<string>>(url) ?? new();
         StateHasChanged();
     }
