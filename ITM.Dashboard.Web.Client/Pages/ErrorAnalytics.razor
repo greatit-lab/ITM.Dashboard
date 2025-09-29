@@ -195,8 +195,8 @@ else
         {
             var client = HttpClientFactory.CreateClient("ITM.Dashboard.Api");
             _sdwts = await client.GetFromJsonAsync<List<string>>($"api/Filters/sdwts/{_selectedSite}") ?? new();
-            // Site 변경 시 EQPID 목록도 바로 로드
-            _eqpIds = await client.GetFromJsonAsync<List<string>>($"api/Filters/eqpidsbysite/{_selectedSite}") ?? new();
+            // ▼▼▼ [수정] Site 변경 시 EQPID 목록 로드 경로 변경 ▼▼▼
+            _eqpIds = await client.GetFromJsonAsync<List<string>>($"api/Filters/eqpidsbysite/error/{_selectedSite}") ?? new();
         }
     }
 
@@ -208,10 +208,10 @@ else
         if (!string.IsNullOrEmpty(_selectedSite))
         {
             var client = HttpClientFactory.CreateClient("ITM.Dashboard.Api");
+            // ▼▼▼ [수정] SDWT 변경 시 EQPID 목록 로드 경로 변경 ▼▼▼
             var url = string.IsNullOrEmpty(_selectedSdwt)
-                ? $"api/Filters/eqpidsbysite/{_selectedSite}"
-                : $"api/Filters/eqpids/{_selectedSdwt}";
-
+                ? $"api/Filters/eqpidsbysite/error/{_selectedSite}"
+                : $"api/Filters/eqpids/error/{_selectedSdwt}";
             _eqpIds = await client.GetFromJsonAsync<List<string>>(url) ?? new();
         }
     }
