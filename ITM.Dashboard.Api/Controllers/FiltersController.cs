@@ -165,7 +165,7 @@ public class FiltersController : ControllerBase
         var dbInfo = DatabaseInfo.CreateDefault();
         await using var conn = new NpgsqlConnection(dbInfo.GetConnectionString());
         await conn.OpenAsync();
-    
+
         // 1. [수정] DB의 cgf_lot_uniformity_metrics 테이블에서 제외할 컬럼 목록을 가져옵니다.
         var excludedColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var exclusionSql = "SELECT metric_name FROM public.cgf_lot_uniformity_metrics WHERE is_excluded = 'Y';";
@@ -177,7 +177,7 @@ public class FiltersController : ControllerBase
                 excludedColumns.Add(reader.GetString(0));
             }
         }
-    
+
         // 2. plg_wf_flat 테이블의 모든 숫자 타입 컬럼 목록을 가져옵니다.
         var allNumericColumns = new List<string>();
         var columnSql = @"
@@ -186,7 +186,7 @@ public class FiltersController : ControllerBase
             WHERE table_schema = 'public'
               AND table_name   = 'plg_wf_flat'
               AND data_type IN ('integer', 'bigint', 'smallint', 'numeric', 'real', 'double precision');";
-        
+
         await using (var cmd = new NpgsqlCommand(columnSql, conn))
         await using (var reader = await cmd.ExecuteReaderAsync())
         {
@@ -195,14 +195,14 @@ public class FiltersController : ControllerBase
                 allNumericColumns.Add(reader.GetString(0));
             }
         }
-        
+
         // 3. 코드에서 두 목록을 비교하여 제외되지 않은 숫자 컬럼만 필터링합니다.
         var potentialMetrics = allNumericColumns.Where(c => !excludedColumns.Contains(c)).ToList();
-    
+
         // 4. 현재 필터 조건으로 WHERE 절 구성
         var whereClauses = new List<string>();
         var parameters = new Dictionary<string, object>();
-    
+
         void AddCondition(string? value, string columnName)
         {
             if (!string.IsNullOrEmpty(value))
@@ -216,12 +216,12 @@ public class FiltersController : ControllerBase
         AddCondition(cassetteRcp, "cassettercp");
         AddCondition(stageGroup, "stagegroup");
         AddCondition(film, "film");
-    
+
         if (startDate.HasValue) { whereClauses.Add("serv_ts >= @startDate"); parameters["startDate"] = startDate.Value; }
         if (endDate.HasValue) { whereClauses.Add("serv_ts <= @endDate"); parameters["endDate"] = endDate.Value.AddDays(1).AddTicks(-1); }
-    
+
         string whereQuery = whereClauses.Any() ? "WHERE " + string.Join(" AND ", whereClauses) : "";
-    
+
         // 5. 최종 후보 컬럼들에 대해 실제 데이터가 있는지 확인
         foreach (var metric in potentialMetrics)
         {
@@ -231,14 +231,14 @@ public class FiltersController : ControllerBase
             {
                 checkCmd.Parameters.AddWithValue(p.Key, p.Value);
             }
-    
+
             var result = await checkCmd.ExecuteScalarAsync();
             if (result != null && result != DBNull.Value)
             {
                 availableMetrics.Add(metric);
             }
         }
-    
+
         return Ok(availableMetrics.OrderBy(m => m));
     }
 
