@@ -13,6 +13,67 @@ using System.Linq;
 [ApiController]
 public class FiltersController : ControllerBase
 {
+    // ▼▼▼ [추가] 페이지별 데이터 소스에 따른 EQP ID 조회를 위한 공용 메서드 ▼▼▼
+    private async Task<ActionResult<IEnumerable<string>>> GetEqpIdsBySource(string sourceTable, string? sdwt, string? site)
+    {
+        if (string.IsNullOrEmpty(sourceTable) || (string.IsNullOrEmpty(sdwt) && string.IsNullOrEmpty(site)))
+        {
+            return BadRequest("Source table and either SDWT or Site is required.");
+        }
+
+        var results = new List<string>();
+        var dbInfo = DatabaseInfo.CreateDefault();
+        await using var conn = new NpgsqlConnection(dbInfo.GetConnectionString());
+        await conn.OpenAsync();
+
+        // SQL Injection 방지를 위해 허용된 테이블 이름 목록을 사용합니다.
+        var allowedTables = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "public.plg_wf_flat",
+            "public.eqp_perf",
+            "public.plg_error",
+            "public.plg_prealign"
+        };
+        if (!allowedTables.Contains(sourceTable))
+        {
+            return BadRequest("Invalid source table specified.");
+        }
+
+        var sql = new StringBuilder($@"
+            SELECT DISTINCT T1.eqpid
+            FROM public.ref_equipment AS T1
+            INNER JOIN {sourceTable} AS T2 ON UPPER(TRIM(T1.eqpid)) = UPPER(TRIM(T2.eqpid))
+            INNER JOIN public.ref_sdwt AS T3 ON UPPER(TRIM(T1.sdwt)) = UPPER(TRIM(T3.sdwt))
+            WHERE T3.is_use = 'Y'");
+
+        if (!string.IsNullOrEmpty(sdwt))
+        {
+            sql.Append(" AND UPPER(TRIM(T1.sdwt)) = UPPER(TRIM(@sdwt))");
+        }
+        else if (!string.IsNullOrEmpty(site))
+        {
+            sql.Append(" AND UPPER(TRIM(T3.site)) = UPPER(TRIM(@site))");
+        }
+        sql.Append(" ORDER BY T1.eqpid;");
+
+        await using var cmd = new NpgsqlCommand(sql.ToString(), conn);
+        if (!string.IsNullOrEmpty(sdwt))
+        {
+            cmd.Parameters.AddWithValue("sdwt", sdwt);
+        }
+        if (!string.IsNullOrEmpty(site))
+        {
+            cmd.Parameters.AddWithValue("site", site);
+        }
+
+        await using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            results.Add(reader.GetString(0));
+        }
+        return Ok(results);
+    }
+
     // Site 목록 조회 API (변경 없음)
     [HttpGet("sites")]
     public async Task<ActionResult<IEnumerable<string>>> GetSites()
@@ -44,41 +105,37 @@ public class FiltersController : ControllerBase
         return Ok(results);
     }
 
-    // ▼▼▼ [수정] 데이터의 대소문자 및 공백 차이로 인해 JOIN이 실패하는 문제를 해결합니다. ▼▼▼
+    // ▼▼▼ [수정] 기존 GetEqpids는 WaferFlatData 페이지를 위해 유지하되, 내부적으로 공용 메서드를 호출하도록 변경 ▼▼▼
     [HttpGet("eqpids/{sdwt?}")]
-    public async Task<ActionResult<IEnumerable<string>>> GetEqpids(string sdwt)
+    public Task<ActionResult<IEnumerable<string>>> GetEqpids(string sdwt)
     {
-        var results = new List<string>();
-        var dbInfo = DatabaseInfo.CreateDefault();
-        await using var conn = new NpgsqlConnection(dbInfo.GetConnectionString());
-        await conn.OpenAsync();
-
-        // [핵심 수정] UPPER()와 TRIM() 함수를 사용하여 데이터 불일치 문제를 해결합니다.
-        var sql = new StringBuilder(@"
-            SELECT DISTINCT T1.eqpid
-            FROM public.ref_equipment AS T1
-            INNER JOIN public.plg_wf_flat AS T2 
-                ON UPPER(TRIM(T1.eqpid)) = UPPER(TRIM(T2.eqpid))");
-
-        if (!string.IsNullOrEmpty(sdwt))
-        {
-            sql.Append(" WHERE UPPER(TRIM(T1.sdwt)) = UPPER(TRIM(@sdwt))");
-        }
-        sql.Append(" ORDER BY T1.eqpid;");
-
-        await using var cmd = new NpgsqlCommand(sql.ToString(), conn);
-        if (!string.IsNullOrEmpty(sdwt))
-        {
-            cmd.Parameters.AddWithValue("sdwt", sdwt);
-        }
-
-        await using var reader = await cmd.ExecuteReaderAsync();
-        while (await reader.ReadAsync())
-        {
-            results.Add(reader.GetString(0));
-        }
-        return Ok(results);
+        return GetEqpIdsBySource("public.plg_wf_flat", sdwt, null);
     }
+    
+    [HttpGet("eqpidsbysite/{site}")]
+    public Task<ActionResult<IEnumerable<string>>> GetEqpidsBySite(string site)
+    {
+        return GetEqpIdsBySource("public.plg_wf_flat", null, site);
+    }
+
+    // ▼▼▼ [추가] 각 페이지를 위한 새로운 EQP ID 조회 API ▼▼▼
+    [HttpGet("eqpids/performance/{sdwt}")]
+    public Task<ActionResult<IEnumerable<string>>> GetPerformanceEqpIds(string sdwt) => GetEqpIdsBySource("public.eqp_perf", sdwt, null);
+
+    [HttpGet("eqpidsbysite/performance/{site}")]
+    public Task<ActionResult<IEnumerable<string>>> GetPerformanceEqpIdsBySite(string site) => GetEqpIdsBySource("public.eqp_perf", null, site);
+
+    [HttpGet("eqpids/error/{sdwt}")]
+    public Task<ActionResult<IEnumerable<string>>> GetErrorEqpIds(string sdwt) => GetEqpIdsBySource("public.plg_error", sdwt, null);
+    
+    [HttpGet("eqpidsbysite/error/{site}")]
+    public Task<ActionResult<IEnumerable<string>>> GetErrorEqpIdsBySite(string site) => GetEqpIdsBySource("public.plg_error", null, site);
+    
+    [HttpGet("eqpids/prealign/{sdwt}")]
+    public Task<ActionResult<IEnumerable<string>>> GetPreAlignEqpIds(string sdwt) => GetEqpIdsBySource("public.plg_prealign", sdwt, null);
+
+    [HttpGet("eqpidsbysite/prealign/{site}")]
+    public Task<ActionResult<IEnumerable<string>>> GetPreAlignEqpIdsBySite(string site) => GetEqpIdsBySource("public.plg_prealign", null, site);
 
     // 특정 EQPID의 데이터 기간(최소/최대) 조회 API (변경 없음)
     [HttpGet("daterange")]
@@ -97,32 +154,6 @@ public class FiltersController : ControllerBase
             return Ok(new DateRangeDto { MinDate = reader.GetDateTime(0), MaxDate = reader.GetDateTime(1) });
         }
         return Ok(new DateRangeDto());
-    }
-
-    [HttpGet("eqpidsbysite/{site}")]
-    public async Task<ActionResult<IEnumerable<string>>> GetEqpidsBySite(string site)
-    {
-        var results = new List<string>();
-        var dbInfo = DatabaseInfo.CreateDefault();
-        await using var conn = new NpgsqlConnection(dbInfo.GetConnectionString());
-        await conn.OpenAsync();
-
-        var sql = @"
-            SELECT T1.eqpid
-            FROM public.ref_equipment AS T1
-            INNER JOIN public.ref_sdwt AS T2 ON T1.sdwt = T2.sdwt
-            WHERE T2.site = @site
-            ORDER BY T1.eqpid;";
-
-        await using var cmd = new NpgsqlCommand(sql, conn);
-        cmd.Parameters.AddWithValue("site", site);
-
-        await using var reader = await cmd.ExecuteReaderAsync();
-        while (await reader.ReadAsync())
-        {
-            results.Add(reader.GetString(0));
-        }
-        return Ok(results);
     }
 
     [HttpGet("availablemetrics")]
