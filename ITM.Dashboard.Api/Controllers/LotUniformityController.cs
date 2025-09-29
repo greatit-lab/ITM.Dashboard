@@ -13,11 +13,6 @@ using System.Threading.Tasks;
 [ApiController]
 public class LotUniformityController : ControllerBase
 {
-    private readonly HashSet<string> _allowedMetrics = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "t1", "gof", "z", "srvisz", "cu_ht_nocal", "cu_res_nocal"
-    };
-
     [HttpGet("trend")]
     public async Task<ActionResult<IEnumerable<LotUniformitySeriesDto>>> GetLotUniformityTrend(
         [FromQuery] string lotId,
@@ -29,7 +24,7 @@ public class LotUniformityController : ControllerBase
         [FromQuery] DateTime startDate,
         [FromQuery] DateTime endDate)
     {
-        if (string.IsNullOrEmpty(lotId) || !_allowedMetrics.Contains(yAxisMetric))
+        if (string.IsNullOrEmpty(lotId) || string.IsNullOrEmpty(yAxisMetric))
         {
             return BadRequest("Invalid parameters.");
         }
@@ -40,7 +35,7 @@ public class LotUniformityController : ControllerBase
         await conn.OpenAsync();
 
         var sqlBuilder = new StringBuilder();
-        // ✅ [수정] WHERE 절에서 film 관련 부분을 제거하고 동적으로 추가하도록 변경
+
         sqlBuilder.AppendFormat(@"
             SELECT waferid, point, ""{0}""
             FROM public.plg_wf_flat
@@ -50,7 +45,6 @@ public class LotUniformityController : ControllerBase
               AND eqpid = @eqpid
               AND serv_ts BETWEEN @startDate AND @endDate", yAxisMetric);
 
-        // ✅ [추가] film 파라미터가 있을 때만 쿼리에 조건을 추가
         if (!string.IsNullOrEmpty(film))
         {
             sqlBuilder.Append(" AND film = @film");
@@ -68,12 +62,10 @@ public class LotUniformityController : ControllerBase
         cmd.Parameters.AddWithValue("startDate", startDate.Date);
         cmd.Parameters.AddWithValue("endDate", endDate.Date.AddDays(1).AddTicks(-1));
 
-        // ✅ [추가] film 파라미터가 있을 때만 파라미터 바인딩
         if (!string.IsNullOrEmpty(film))
         {
             cmd.Parameters.AddWithValue("film", film);
         }
-
 
         await using var reader = await cmd.ExecuteReaderAsync();
         while (await reader.ReadAsync())
