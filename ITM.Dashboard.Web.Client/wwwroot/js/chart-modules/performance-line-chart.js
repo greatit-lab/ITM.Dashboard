@@ -22,7 +22,18 @@ window.AmChartMakers.PerformanceLineChart = {
         const xAxis = chart.xAxes.push(am5xy.DateAxis.new(root, {
             baseInterval: { timeUnit: config.xTimeUnit || "minute", count: 1 },
             renderer: am5xy.AxisRendererX.new(root, { minGridDistance: 120 }),
-            inputDateFormat: "yyyy-MM-ddTHH:mm:ss"
+            inputDateFormat: "yyyy-MM-ddTHH:mm:ss",
+            // ▼▼▼ [추가] 데이터 그룹화 기능을 활성화하여 포인트 겹침 현상을 방지합니다. ▼▼▼
+            groupData: true,
+            groupIntervals: [
+                { timeUnit: "minute", count: 1 },
+                { timeUnit: "minute", count: 5 },
+                { timeUnit: "minute", count: 10 },
+                { timeUnit: "minute", count: 30 },
+                { timeUnit: "hour", count: 1 },
+                { timeUnit: "hour", count: 6 },
+                { timeUnit: "day", count: 1 }
+            ]
         }));
 
         const consistentFormat = config.xAxisDateFormat || "yy-MM-dd HH:mm";
@@ -64,7 +75,7 @@ window.AmChartMakers.PerformanceLineChart = {
         // 시리즈 설정
         config.series.forEach(seriesConfig => {
             const tooltip = am5.Tooltip.new(root, {
-                labelText: `${seriesConfig.name}: ${seriesConfig.tooltipText}`,
+                labelText: seriesConfig.tooltipText,
                 getFillFromSprite: true,
                 getLabelFillFromSprite: true
             });
