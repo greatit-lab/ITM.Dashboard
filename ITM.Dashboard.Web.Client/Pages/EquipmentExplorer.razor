@@ -1,0 +1,240 @@
+@* ITM.Dashboard/ITM.Dashboard.Web.Client/Pages/EquipmentExplorer.razor *@
+
+@page "/equipment-explorer"
+@using ITM.Dashboard.Web.Client.Models
+@inject IHttpClientFactory HttpClientFactory
+
+<PageTitle>Equipment Specs</PageTitle>
+
+@* ▼▼▼ [핵심 수정] 테이블 스타일을 재정의합니다. ▼▼▼ *@
+<style>
+    .specs-grid .mud-table-cell {
+        font-size: 0.8rem;
+        /* white-space: nowrap; - 줄바꿈을 허용하기 위해 제거 */
+        line-height: 1.4; /* 줄 간격 설정 */
+    }
+    .grid-container {
+        overflow-x: auto; /* 테이블이 넘칠 경우 가로 스크롤바 생성 */
+    }
+</style>
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
+    <MudIcon Icon="@Icons.Material.Rounded.Computer" Size="Size.Large" />
+    <MudText Typo="Typo.h4">Equipment Specs</MudText>
+</MudStack>
+
+<MudPaper Class="pa-2 mb-4">
+    <MudGrid Spacing="2" Justify="Justify.FlexStart" AlignItems="AlignItems.Center">
+        <MudItem xs="12" sm="4" md="3">
+            <MudSelect T="string" Label="Site" Value="_selectedSite" ValueChanged="OnSiteChanged"
+                       Dense="true" Margin="Margin.Dense" Required="true" RequiredError="Site는 필수입니다."
+                       Variant="Variant.Outlined">
+                @foreach (var site in _sites)
+                {
+                    <MudSelectItem T="string" Value="@site">@site</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="4" md="3">
+            <MudSelect T="string" Label="SDWT (All)" Value="_selectedSdwt" ValueChanged="OnSdwtChanged"
+                       Disabled="@(string.IsNullOrEmpty(_selectedSite))"
+                       Dense="true" Margin="Margin.Dense" Clearable="true" Variant="Variant.Outlined">
+                @foreach (var sdwt in _sdwts)
+                {
+                    <MudSelectItem T="string" Value="@sdwt">@sdwt</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="4" md="3">
+            <MudAutocomplete T="string" Label="EQP ID (All)" Value="_selectedEqpId" ValueChanged="OnEqpIdChanged"
+                             SearchFunc="SearchEqpIds"
+                             Disabled="@(string.IsNullOrEmpty(_selectedSite))"
+                             Dense="true" Margin="Margin.Dense" Clearable="true" Variant="Variant.Outlined"
+                             ResetValueOnEmptyText="true" CoerceText="false" />
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@if (!_isInitialState)
+{
+    @* ▼▼▼ [핵심 수정] MudDataGrid를 div로 감싸고, Column의 Style을 제거하여 자동 너비 조절을 유도합니다. ▼▼▼ *@
+    <div class="grid-container">
+        <MudDataGrid T="EquipmentSpecDto" Items="_equipmentList" Hover="true" Dense="true" Striped="true"
+                     Sortable="true" Filterable="false" Bordered="true"
+                     Loading="_isLoading"
+                     RowsPerPage="15"
+                     Class="specs-grid">
+            <Columns>
+                <PropertyColumn Property="x => x.Type" Title="ITM Type" />
+                <PropertyColumn Property="x => x.EqpId" Title="EQP ID" />
+                <PropertyColumn Property="x => x.SystemModel" Title="Model" />
+                <PropertyColumn Property="x => x.Application" Title="Application" />
+                <PropertyColumn Property="x => x.Version" Title="App Ver" />
+                <PropertyColumn Property="x => x.DbVersion" Title="DB Ver" />
+                <PropertyColumn Property="x => x.SerialNum" Title="Serial Num" />
+                <PropertyColumn Property="x => x.PcName" Title="PC Name" />
+                <PropertyColumn Property="x => x.IpAddress" Title="IP Address" />
+                <PropertyColumn Property="x => x.MacAddress" Title="MAC Address" />
+                <TemplateColumn Title="Operation System(OS)" SortBy="x => x.Os">
+                    <CellTemplate>
+                        @FormatOperatingSystem(context.Item.Os, context.Item.SystemType)
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.Locale" Title="Locale" />
+                <TemplateColumn Title="Timezone" SortBy="x => x.Timezone">
+                    <CellTemplate>
+                        @FormatTimezone(context.Item.Timezone)
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.Cpu" Title="CPU" />
+                <PropertyColumn Property="x => x.Memory" Title="Memory" />
+                <PropertyColumn Property="x => x.Disk" Title="Disk" />
+                <PropertyColumn Property="x => x.Vga" Title="VGA" />
+                <PropertyColumn Property="x => x.LastContact" Title="Last Contact" Format="yy-MM-dd" />
+            </Columns>
+            <PagerContent>
+                <MudDataGridPager T="EquipmentSpecDto" />
+            </PagerContent>
+            <NoRecordsContent>
+                <MudText>조회된 장비 정보가 없습니다.</MudText>
+            </NoRecordsContent>
+        </MudDataGrid>
+    </div>
+}
+else
+{
+    <MudAlert Severity="Severity.Info">Site와 SDWT를 선택하여 장비 정보를 조회하세요.</MudAlert>
+}
+
+
+@code {
+    private List<string> _sites = new();
+    private List<string> _sdwts = new();
+    private List<string> _availableEqpIds = new();
+
+    private string _selectedSite;
+    private string _selectedSdwt;
+    private string _selectedEqpId;
+
+    private bool _isLoading = false;
+    private bool _isInitialState = true;
+    private List<EquipmentSpecDto> _equipmentList = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var client = HttpClientFactory.CreateClient("ITM.Dashboard.Api");
+        _sites = await client.GetFromJsonAsync<List<string>>("api/Filters/sites") ?? new();
+    }
+
+    private async Task OnSiteChanged(string newSite)
+    {
+        _selectedSite = newSite;
+        _selectedSdwt = null;
+        _selectedEqpId = null;
+        _sdwts.Clear();
+        _availableEqpIds.Clear();
+        _equipmentList.Clear();
+        _isInitialState = true;
+
+        if (!string.IsNullOrEmpty(_selectedSite))
+        {
+            var client = HttpClientFactory.CreateClient("ITM.Dashboard.Api");
+            _sdwts = await client.GetFromJsonAsync<List<string>>($"api/Filters/sdwts/{_selectedSite}") ?? new();
+            _availableEqpIds = await client.GetFromJsonAsync<List<string>>($"api/Equipment/eqpids?site={_selectedSite}") ?? new();
+        }
+    }
+
+    private async Task OnSdwtChanged(string newSdwt)
+    {
+        _selectedSdwt = newSdwt;
+        _selectedEqpId = null;
+        
+        if (!string.IsNullOrEmpty(_selectedSite))
+        {
+            var client = HttpClientFactory.CreateClient("ITM.Dashboard.Api");
+            if (!string.IsNullOrEmpty(_selectedSdwt))
+            {
+                _availableEqpIds = await client.GetFromJsonAsync<List<string>>($"api/Equipment/eqpids?sdwt={_selectedSdwt}") ?? new();
+            }
+            else
+            {
+                _availableEqpIds = await client.GetFromJsonAsync<List<string>>($"api/Equipment/eqpids?site={_selectedSite}") ?? new();
+            }
+        }
+
+        await LoadEquipmentDetails();
+    }
+
+    private async Task OnEqpIdChanged(string newEqpId)
+    {
+        _selectedEqpId = newEqpId;
+        await LoadEquipmentDetails();
+    }
+
+    private async Task LoadEquipmentDetails()
+    {
+        if (string.IsNullOrEmpty(_selectedSite) || string.IsNullOrEmpty(_selectedSdwt))
+        {
+            _equipmentList.Clear();
+            _isInitialState = true;
+            StateHasChanged();
+            return;
+        }
+
+        _isLoading = true;
+        _isInitialState = false;
+        StateHasChanged();
+
+        var client = HttpClientFactory.CreateClient("ITM.Dashboard.Api");
+        var query = new List<string>();
+        
+        if (!string.IsNullOrEmpty(_selectedEqpId))
+        {
+            query.Add($"eqpid={Uri.EscapeDataString(_selectedEqpId)}");
+        }
+        else if (!string.IsNullOrEmpty(_selectedSdwt))
+        {
+            query.Add($"sdwt={Uri.EscapeDataString(_selectedSdwt)}");
+        }
+        else
+        {
+            query.Add($"site={Uri.EscapeDataString(_selectedSite)}");
+        }
+        
+        var queryString = string.Join("&", query);
+        _equipmentList = await client.GetFromJsonAsync<List<EquipmentSpecDto>>($"api/Equipment/details?{queryString}") ?? new();
+        
+        _isLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task<IEnumerable<string>> SearchEqpIds(string value, CancellationToken token)
+    {
+        await Task.Yield();
+        if (string.IsNullOrEmpty(value) || value == _selectedEqpId)
+        {
+            return _availableEqpIds;
+        }
+        return _availableEqpIds.Where(x => x.Contains(value, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private string FormatOperatingSystem(string os, string systemType)
+    {
+        if (string.IsNullOrEmpty(os)) return systemType;
+        var formattedOs = os.Replace("Microsoft Windows", "Win").Replace("Professional", "Pro").Replace("Enterprise", "Ent");
+        var formattedSystemType = systemType.Replace("-bit", "bit");
+        return $"{formattedOs} {formattedSystemType}".Trim();
+    }
+    
+    private string FormatTimezone(string timezone)
+    {
+        if (string.IsNullOrEmpty(timezone)) return string.Empty;
+        switch (timezone)
+        {
+            case "Korea Standard Time": return "KST";
+            case "China Standard Time": return "CST";
+            case "Singapore Standard Time": return "SGT";
+            default: return timezone;
+        }
+    }
+}
