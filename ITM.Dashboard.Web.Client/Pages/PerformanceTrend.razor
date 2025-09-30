@@ -275,7 +275,7 @@ else
             xField = "timestamp",
             yAxes = new object[] { new { min = 0, max = 100, title = "Usage (%)" } },
             series = new[] {
-                new { name = "CPU", valueField = "cpuUsage", color = "#33b2ff", tooltipText = "{valueY.formatNumber('#.00')}%" }
+                new { name = "CPU", valueField = "cpuUsage", color = "#33b2ff", bulletRadius = 2, tooltipText = "{valueX.formatDate('HH:mm:ss')}:[/] [bold]{name}: {valueY.formatNumber('#.00')}%" }
             }
         };
 
@@ -287,8 +287,8 @@ else
                 new { opposite = true, title = "Fan (RPM)", min = 0 }
             },
             series = new object[] {
-                new { name = "CPU Temp", valueField = "cpuTemp", yAxisIndex = 0, color = "#ffc400", tooltipText = "{valueY.formatNumber('#.0')}°C" },
-                new { name = "Fan Speed", valueField = "fanSpeed", yAxisIndex = 1, color = "#9e9e9e", tooltipText = "{valueY.formatNumber('#')} RPM" }
+                new { name = "CPU Temp", valueField = "cpuTemp", yAxisIndex = 0, color = "#ffc400", bulletRadius = 2, tooltipText = "{valueX.formatDate('HH:mm:ss')}:[/] [bold]{name}: {valueY.formatNumber('#.0')}°C" },
+                new { name = "Fan Speed", valueField = "fanSpeed", yAxisIndex = 1, color = "#9e9e9e", bulletRadius = 2, tooltipText = "{valueX.formatDate('HH:mm:ss')}:[/] [bold]{name}: {valueY.formatNumber('#')} RPM" }
             }
         };
 
@@ -297,7 +297,7 @@ else
             xField = "timestamp",
             yAxes = new object[] { new { min = 0, max = 100, title = "Usage (%)" } },
             series = new[] {
-                new { name = "Memory", valueField = "memoryUsage", color = "#39e6a3", tooltipText = "{valueY.formatNumber('#.00')}%" }
+                new { name = "Memory", valueField = "memoryUsage", color = "#39e6a3", bulletRadius = 2, tooltipText = "{valueX.formatDate('HH:mm:ss')}:[/] [bold]{name}: {valueY.formatNumber('#.00')}%" }
             }
         };
 
@@ -306,7 +306,7 @@ else
             xField = "timestamp",
             yAxes = new object[] { new { title = "Temp (°C)", min = 0 } },
             series = new[] {
-                new { name = "GPU Temp", valueField = "gpuTemp", color = "#ff8c00", tooltipText = "{valueY.formatNumber('#.0')}°C" }
+                new { name = "GPU Temp", valueField = "gpuTemp", color = "#ff8c00", bulletRadius = 2, tooltipText = "{valueX.formatDate('HH:mm:ss')}:[/] [bold]{name}: {valueY.formatNumber('#.0')}°C" }
             }
         };
     }
