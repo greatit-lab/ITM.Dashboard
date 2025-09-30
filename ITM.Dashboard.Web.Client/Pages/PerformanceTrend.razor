@@ -44,16 +44,19 @@
                              ResetValueOnEmptyText="true" CoerceText="false" CoerceValue="false"
                              Disabled="@(_filterState < FilterState.SelectEqpId || _filterState == FilterState.RealTime)" />
         </MudItem>
-        <MudItem xs="6" sm="6" md="2">
-            <MudDatePicker Label="Start Date" @bind-Date="_startDate"
-                           Dense="true" Margin="Margin.Dense" Variant="Variant.Text"
-                           Disabled="@(_filterState < FilterState.ReadyToSearch || _filterState == FilterState.RealTime)" />
+
+        @* ▼▼▼ [요청사항] 날짜 및 시간 범위 선택 필드로 변경 ▼▼▼ *@
+        <MudItem xs="12" sm="8" md="4">
+            <MudStack Row="true">
+                <MudDateRangePicker @bind-DateRange="_dateRange" Label="Date Range" Dense="true" Margin="Margin.Dense"
+                                    Disabled="@(_filterState < FilterState.ReadyToSearch || _filterState == FilterState.RealTime)" />
+                <MudTimePicker Label="Start Time" @bind-Time="_startTime" TimeEditMode="TimeEditMode.Normal" Dense="true" Margin="Margin.Dense"
+                               Disabled="@(_filterState < FilterState.ReadyToSearch || _filterState == FilterState.RealTime)" />
+                <MudTimePicker Label="End Time" @bind-Time="_endTime" TimeEditMode="TimeEditMode.Normal" Dense="true" Margin="Margin.Dense"
+                               Disabled="@(_filterState < FilterState.ReadyToSearch || _filterState == FilterState.RealTime)" />
+            </MudStack>
         </MudItem>
-        <MudItem xs="6" sm="6" md="2">
-            <MudDatePicker Label="End Date" @bind-Date="_endDate"
-                           Dense="true" Margin="Margin.Dense" Variant="Variant.Text"
-                           Disabled="@(_filterState < FilterState.ReadyToSearch || _filterState == FilterState.RealTime)" />
-        </MudItem>
+
         <MudItem xs="4" sm="3" md="1">
             <MudButton Variant="Variant.Filled" Color="Color.Primary"
                        OnClick="OnSearchClicked" FullWidth="true"
@@ -83,62 +86,110 @@
 @if (_isSearched)
 {
     <MudGrid Spacing="3">
+        @* --- 좌측 열 --- *@
         <MudItem xs="12" md="6">
-            <MudPaper Class="pa-4" Style="height:450px; position:relative;">
-                <MudText Typo="Typo.h6" GutterBottom="true">@_selectedEqpId CPU Performance Trend</MudText>
-                @if (_isLoading)
-                {
-                    <div class="d-flex justify-center align-center" style="height:calc(100% - 40px);">
-                        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
-                    </div>
-                }
-                else if (_chartData.Any())
-                {
-                    <AmChart ChartData="_chartData" ChartConfig="_cpuChartConfig" Height="400px" ChartType="PerformanceLineChart" />
-                }
-                else
-                {
-                    <div class="d-flex justify-center align-center" style="height:400px;">
-                        <MudText>데이터가 없습니다.</MudText>
-                    </div>
-                }
-            </MudPaper>
+            <MudText Typo="Typo.h5" GutterBottom="true" Class="mb-3"><b>CPU</b></MudText>
+            <MudStack Spacing="3">
+                @* (좌측 상단) CPU Usage Chart *@
+                <MudPaper Class="pa-4" Style="height:350px; position:relative;">
+                    <MudText Typo="Typo.h6" GutterBottom="true">@_selectedEqpId CPU Usage Trend</MudText>
+                    @if (_isLoading)
+                    {
+                        <div class="d-flex justify-center align-center" style="height:calc(100% - 40px);">
+                            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                        </div>
+                    }
+                    else if (_chartData.Any())
+                    {
+                        <AmChart ChartData="_chartData" ChartConfig="_cpuUsageChartConfig" Height="300px" ChartType="PerformanceLineChart" />
+                    }
+                    else
+                    {
+                        <div class="d-flex justify-center align-center" style="height:300px;"><MudText>데이터가 없습니다.</MudText></div>
+                    }
+                </MudPaper>
+
+                @* (좌측 하단) CPU Temp & Fan Speed Chart *@
+                <MudPaper Class="pa-4" Style="height:350px; position:relative;">
+                    <MudText Typo="Typo.h6" GutterBottom="true">@_selectedEqpId CPU Temp & Fan Speed</MudText>
+                    @if (_isLoading)
+                    {
+                        <div class="d-flex justify-center align-center" style="height:calc(100% - 40px);">
+                            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                        </div>
+                    }
+                    else if (_chartData.Any())
+                    {
+                        <AmChart ChartData="_chartData" ChartConfig="_cpuTempFanChartConfig" Height="300px" ChartType="PerformanceLineChart" />
+                    }
+                    else
+                    {
+                        <div class="d-flex justify-center align-center" style="height:300px;"><MudText>데이터가 없습니다.</MudText></div>
+                    }
+                </MudPaper>
+            </MudStack>
         </MudItem>
+
+        @* --- 우측 열 --- *@
         <MudItem xs="12" md="6">
-            <MudPaper Class="pa-4" Style="height:450px; position:relative;">
-                <MudText Typo="Typo.h6" GutterBottom="true">@_selectedEqpId Memory Performance Trend</MudText>
-                @if (_isLoading)
-                {
-                    <div class="d-flex justify-center align-center" style="height:calc(100% - 40px);">
-                        <MudProgressCircular Color="Color.Info" Indeterminate="true" />
-                    </div>
-                }
-                else if (_chartData.Any())
-                {
-                    <AmChart ChartData="_chartData" ChartConfig="_memoryChartConfig" Height="400px" ChartType="PerformanceLineChart" />
-                }
-                else
-                {
-                    <div class="d-flex justify-center align-center" style="height:400px;">
-                        <MudText>데이터가 없습니다.</MudText>
-                    </div>
-                }
-            </MudPaper>
+            <MudText Typo="Typo.h5" GutterBottom="true" Class="mb-3"><b>Memory & GPU</b></MudText>
+            <MudStack Spacing="3">
+                @* (우측 상단) Memory Usage Chart *@
+                <MudPaper Class="pa-4" Style="height:350px; position:relative;">
+                    <MudText Typo="Typo.h6" GutterBottom="true">@_selectedEqpId Memory Usage Trend</MudText>
+                    @if (_isLoading)
+                    {
+                        <div class="d-flex justify-center align-center" style="height:calc(100% - 40px);">
+                            <MudProgressCircular Color="Color.Info" Indeterminate="true" />
+                        </div>
+                    }
+                    else if (_chartData.Any())
+                    {
+                        <AmChart ChartData="_chartData" ChartConfig="_memoryUsageChartConfig" Height="300px" ChartType="PerformanceLineChart" />
+                    }
+                    else
+                    {
+                        <div class="d-flex justify-center align-center" style="height:300px;"><MudText>데이터가 없습니다.</MudText></div>
+                    }
+                </MudPaper>
+
+                @* (우측 하단) GPU Temp Chart *@
+                <MudPaper Class="pa-4" Style="height:350px; position:relative;">
+                    <MudText Typo="Typo.h6" GutterBottom="true">@_selectedEqpId GPU Temp Trend</MudText>
+                    @if (_isLoading)
+                    {
+                        <div class="d-flex justify-center align-center" style="height:calc(100% - 40px);">
+                            <MudProgressCircular Color="Color.Info" Indeterminate="true" />
+                        </div>
+                    }
+                    else if (_chartData.Any())
+                    {
+                        <AmChart ChartData="_chartData" ChartConfig="_gpuTempChartConfig" Height="300px" ChartType="PerformanceLineChart" />
+                    }
+                    else
+                    {
+                        <div class="d-flex justify-center align-center" style="height:300px;"><MudText>데이터가 없습니다.</MudText></div>
+                    }
+                </MudPaper>
+            </MudStack>
         </MudItem>
+
+        @* --- 하단 요약 테이블 --- *@
         <MudItem xs="12">
             <MudPaper Class="pa-4">
                 <MudText Typo="Typo.h6" GutterBottom="true">Performance Summary</MudText>
-                @* ▼▼▼ [핵심 수정 1/3] 성능 요약 테이블의 UI를 변경합니다. ▼▼▼ *@
                 <MudSimpleTable Dense="true" Hover="true" Class="mt-2">
                     <thead>
                         <tr>
                             <th>EQP ID</th>
-                            <th style="text-align:center">CPU Peak Time</th>
-                            <th style="text-align:right">CPU Max (%)</th>
-                            <th style="text-align:right">CPU Avg (%)</th>
-                            <th style="text-align:center">Memory Peak Time</th>
-                            <th style="text-align:right">Memory Max (%)</th>
-                            <th style="text-align:right">Memory Avg (%)</th>
+                            <th>CPU Peak Time</th>
+                            <th>CPU Max (%)</th>
+                            <th>CPU Temp (°C)</th>
+                            <th>Fan Speed (RPM)</th>
+                            <th>Memory Peak Time</th>
+                            <th>Memory Max (%)</th>
+                            <th>GPU Peak Time</th>
+                            <th>GPU Temp Max (°C)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -146,12 +197,14 @@
                         {
                             <tr>
                                 <td>@summary.Key</td>
-                                <td style="text-align:center">@summary.Value.CpuMaxTimestamp?.ToString("yy-MM-dd HH:mm:ss")</td>
-                                <td style="text-align:right">@summary.Value.CpuMax.ToString("F2")</td>
-                                <td style="text-align:right">@summary.Value.CpuAvg.ToString("F2")</td>
-                                <td style="text-align:center">@summary.Value.MemoryMaxTimestamp?.ToString("yy-MM-dd HH:mm:ss")</td>
-                                <td style="text-align:right">@summary.Value.MemoryMax.ToString("F2")</td>
-                                <td style="text-align:right">@summary.Value.MemoryAvg.ToString("F2")</td>
+                                <td>@summary.Value.CpuPeakTimestamp?.ToString("yy-MM-dd HH:mm:ss")</td>
+                                <td>@summary.Value.CpuMaxUsage.ToString("F2")</td>
+                                <td>@summary.Value.CpuTempAtCpuPeak.ToString("F1")</td>
+                                <td>@summary.Value.FanSpeedAtCpuPeak.ToString("F0")</td>
+                                <td>@summary.Value.MemoryPeakTimestamp?.ToString("yy-MM-dd HH:mm:ss")</td>
+                                <td>@summary.Value.MemoryMaxUsage.ToString("F2")</td>
+                                <td>@summary.Value.GpuPeakTimestamp?.ToString("yy-MM-dd HH:mm:ss")</td>
+                                <td>@summary.Value.GpuMaxTemp.ToString("F1")</td>
                             </tr>
                         }
                     </tbody>
@@ -168,19 +221,19 @@ else
 }
 
 @code {
-    // ▼▼▼ [핵심 수정 2/3] 요약 데이터를 담을 새로운 클래스를 정의하고, _summaryData의 타입을 변경합니다. ▼▼▼
     public class PerformanceSummary
     {
-        public double CpuAvg { get; set; }
-        public double CpuMax { get; set; }
-        public DateTime? CpuMaxTimestamp { get; set; }
-        public double MemoryAvg { get; set; }
-        public double MemoryMax { get; set; }
-        public DateTime? MemoryMaxTimestamp { get; set; }
+        public DateTime? CpuPeakTimestamp { get; set; }
+        public double CpuMaxUsage { get; set; }
+        public double CpuTempAtCpuPeak { get; set; }
+        public double FanSpeedAtCpuPeak { get; set; }
+        public DateTime? MemoryPeakTimestamp { get; set; }
+        public double MemoryMaxUsage { get; set; }
+        public DateTime? GpuPeakTimestamp { get; set; }
+        public double GpuMaxTemp { get; set; }
     }
 
     private Dictionary<string, PerformanceSummary> _summaryData = new();
-
     private enum FilterState { Initial, SelectSdwt, SelectEqpId, ReadyToSearch, Searched, RealTime }
     private FilterState _filterState = FilterState.Initial;
     private bool _isLoading = false;
@@ -189,38 +242,72 @@ else
     private string? _selectedSite;
     private string? _selectedSdwt;
     private string? _selectedEqpId;
-    private DateTime? _startDate = DateTime.Now.Date.AddDays(-1);
-    private DateTime? _endDate = DateTime.Now.Date;
+
+    // ▼▼▼ [수정] 날짜/시간 관련 변수 변경 ▼▼▼
+    private DateRange _dateRange = new DateRange(DateTime.Now.Date.AddDays(-1), DateTime.Now.Date);
+    private TimeSpan? _startTime = new TimeSpan(0, 0, 0);
+    private TimeSpan? _endTime = new TimeSpan(23, 59, 59);
+
     private List<string> _sites = new();
     private List<string> _sdwts = new();
     private List<string> _availableEqpIds = new();
     private List<PerformanceDataPointWithEqpIdDto> _chartData = new();
-    private object _cpuChartConfig;
-    private object _memoryChartConfig;
     private int _selectedIntervalSeconds = 0;
     private Timer? _timer;
+
+    private object _cpuUsageChartConfig;
+    private object _cpuTempFanChartConfig;
+    private object _memoryUsageChartConfig;
+    private object _gpuTempChartConfig;
+
+    // ▼▼▼ [추가] 날짜와 시간을 조합하는 속성 ▼▼▼
+    private DateTime EffectiveStartDate => _dateRange.Start.GetValueOrDefault(DateTime.Now.Date).Date + _startTime.GetValueOrDefault(TimeSpan.Zero);
+    private DateTime EffectiveEndDate => _dateRange.End.GetValueOrDefault(DateTime.Now.Date).Date + _endTime.GetValueOrDefault(new TimeSpan(23, 59, 59));
+
 
     protected override async Task OnInitializedAsync()
     {
         var client = HttpClientFactory.CreateClient("ITM.Dashboard.Api");
         _sites = await client.GetFromJsonAsync<List<string>>("api/Filters/sites") ?? new();
 
-        _cpuChartConfig = new
+        _cpuUsageChartConfig = new
         {
             xField = "timestamp",
-            xTimeUnit = "minute",
-            xAxisDateFormat = "yy-MM-dd HH:mm",
-            yAxes = new object[] { new { min = 0, max = 100 } },
-            series = new[] { new { name = "CPU", valueField = "cpuUsage", color = "#33b2ff", bulletRadius = 4, strokeWidth = 1, tooltipText = "{valueX.formatDate('HH:mm:ss')} {name}: {valueY.formatNumber('#.00')}%" } }
+            yAxes = new object[] { new { min = 0, max = 100, title = "Usage (%)" } },
+            series = new[] {
+                new { name = "CPU", valueField = "cpuUsage", color = "#33b2ff", tooltipText = "{valueY.formatNumber('#.00')}%" }
+            }
         };
 
-        _memoryChartConfig = new
+        _cpuTempFanChartConfig = new
         {
             xField = "timestamp",
-            xTimeUnit = "minute",
-            xAxisDateFormat = "yy-MM-dd HH:mm",
-            yAxes = new object[] { new { min = 0, max = 100 } },
-            series = new[] { new { name = "Memory", valueField = "memoryUsage", color = "#39e6a3", bulletRadius = 4, strokeWidth = 1, tooltipText = "{valueX.formatDate('HH:mm:ss')} {name}: {valueY.formatNumber('#.00')}%" } }
+            yAxes = new object[] {
+                new { title = "Temp (°C)", min = 0 },
+                new { opposite = true, title = "Fan (RPM)", min = 0 }
+            },
+            series = new object[] {
+                new { name = "CPU Temp", valueField = "cpuTemp", yAxisIndex = 0, color = "#ffc400", tooltipText = "{valueY.formatNumber('#.0')}°C" },
+                new { name = "Fan Speed", valueField = "fanSpeed", yAxisIndex = 1, color = "#9e9e9e", tooltipText = "{valueY.formatNumber('#')} RPM" }
+            }
+        };
+
+        _memoryUsageChartConfig = new
+        {
+            xField = "timestamp",
+            yAxes = new object[] { new { min = 0, max = 100, title = "Usage (%)" } },
+            series = new[] {
+                new { name = "Memory", valueField = "memoryUsage", color = "#39e6a3", tooltipText = "{valueY.formatNumber('#.00')}%" }
+            }
+        };
+
+        _gpuTempChartConfig = new
+        {
+            xField = "timestamp",
+            yAxes = new object[] { new { title = "Temp (°C)", min = 0 } },
+            series = new[] {
+                new { name = "GPU Temp", valueField = "gpuTemp", color = "#ff8c00", tooltipText = "{valueY.formatNumber('#.0')}°C" }
+            }
         };
     }
 
@@ -258,7 +345,6 @@ else
         else
         {
             var client = HttpClientFactory.CreateClient("ITM.Dashboard.Api");
-            // ▼▼▼ [수정] 아래 API 경로를 변경합니다. ▼▼▼
             _availableEqpIds = await client.GetFromJsonAsync<List<string>>($"api/Filters/eqpids/performance/{sdwt}") ?? new();
             _filterState = FilterState.SelectEqpId;
         }
@@ -307,8 +393,12 @@ else
     private async Task ResetFilters()
     {
         _selectedSite = _selectedSdwt = _selectedEqpId = null;
-        _startDate = DateTime.Now.Date.AddDays(-1);
-        _endDate = DateTime.Now.Date;
+
+        // ▼▼▼ [수정] 날짜/시간 필터 초기화 ▼▼▼
+        _dateRange = new DateRange(DateTime.Now.Date.AddDays(-1), DateTime.Now.Date);
+        _startTime = new TimeSpan(0, 0, 0);
+        _endTime = new TimeSpan(23, 59, 59);
+
         _sdwts.Clear();
         _availableEqpIds.Clear();
         if (_eqpIdAutocomplete != null)
@@ -353,8 +443,10 @@ else
             }
             else
             {
-                start = _startDate ?? DateTime.Now.Date.AddDays(-1);
-                end = (_endDate ?? DateTime.Now.Date).AddDays(1);
+                // ▼▼▼ [수정] 조합된 날짜/시간 사용 ▼▼▼
+                start = EffectiveStartDate;
+                end = EffectiveEndDate;
+
                 var dateDiffDays = (end - start).TotalDays;
                 if (dateDiffDays <= 1) intervalToUse = 5;
                 else if (dateDiffDays <= 3) intervalToUse = 10;
@@ -370,7 +462,6 @@ else
             query.Append($"&intervalSeconds={intervalToUse}");
             query.Append($"&eqpids={Uri.EscapeDataString(_selectedEqpId)}");
             var data = await client.GetFromJsonAsync<List<PerformanceDataPointWithEqpIdDto>>($"api/PerformanceAnalytics/history?{query}");
-
             if (data != null && data.Any())
             {
                 _chartData = data;
@@ -389,7 +480,6 @@ else
         }
     }
 
-    // ▼▼▼ [핵심 수정 3/3] CalculateSummary 메서드의 로직을 변경하여 Max 발생 시점을 찾습니다. ▼▼▼
     private void CalculateSummary(List<PerformanceDataPointWithEqpIdDto> data)
     {
         _summaryData.Clear();
@@ -397,21 +487,33 @@ else
         {
             if (!group.Any()) continue;
 
-            // CPU 사용량이 가장 높은 데이터 포인트를 찾습니다.
-            var maxCpuPoint = group.OrderByDescending(d => d.CpuUsage).FirstOrDefault();
+            var cpuPeakDataPoint = group.OrderByDescending(d => d.CpuUsage).FirstOrDefault();
+            var memoryPeakDataPoint = group.OrderByDescending(d => d.MemoryUsage).FirstOrDefault();
+            var gpuPeakDataPoint = group.OrderByDescending(d => d.GpuTemp).FirstOrDefault();
 
-            // Memory 사용량이 가장 높은 데이터 포인트를 찾습니다.
-            var maxMemoryPoint = group.OrderByDescending(d => d.MemoryUsage).FirstOrDefault();
+            var summary = new PerformanceSummary();
 
-            _summaryData[group.Key] = new PerformanceSummary
+            if (cpuPeakDataPoint != null)
             {
-                CpuAvg = group.Average(d => d.CpuUsage),
-                CpuMax = maxCpuPoint?.CpuUsage ?? 0,
-                CpuMaxTimestamp = maxCpuPoint?.Timestamp,
-                MemoryAvg = group.Average(d => d.MemoryUsage),
-                MemoryMax = maxMemoryPoint?.MemoryUsage ?? 0,
-                MemoryMaxTimestamp = maxMemoryPoint?.Timestamp
-            };
+                summary.CpuPeakTimestamp = cpuPeakDataPoint.Timestamp;
+                summary.CpuMaxUsage = cpuPeakDataPoint.CpuUsage;
+                summary.CpuTempAtCpuPeak = cpuPeakDataPoint.CpuTemp;
+                summary.FanSpeedAtCpuPeak = cpuPeakDataPoint.FanSpeed;
+            }
+
+            if (memoryPeakDataPoint != null)
+            {
+                summary.MemoryPeakTimestamp = memoryPeakDataPoint.Timestamp;
+                summary.MemoryMaxUsage = memoryPeakDataPoint.MemoryUsage;
+            }
+
+            if (gpuPeakDataPoint != null)
+            {
+                summary.GpuPeakTimestamp = gpuPeakDataPoint.Timestamp;
+                summary.GpuMaxTemp = gpuPeakDataPoint.GpuTemp;
+            }
+
+            _summaryData[group.Key] = summary;
         }
     }
 
@@ -430,12 +532,8 @@ else
     private async Task<IEnumerable<string>> SearchEqpids(string value, CancellationToken token)
     {
         await Task.Yield();
-
-        // ▼▼▼ [핵심 수정] 검색어가 비어있거나, 현재 선택된 EQP ID와 같을 경우 전체 목록을 반환합니다. ▼▼▼
         if (string.IsNullOrEmpty(value) || value == _selectedEqpId)
             return _availableEqpIds;
-
-        // 사용자가 새로운 검색어를 입력할 때만 목록을 필터링합니다.
         return _availableEqpIds.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
     }
 }
