@@ -19,21 +19,18 @@ window.AmChartMakers.PerformanceLineChart = {
         cursor.lineX.set("stroke", cursorColor);
         cursor.lineY.set("stroke", cursorColor);
 
-        // ✅ 4. X축 라벨 형식 및 겹침 방지
         const xAxis = chart.xAxes.push(am5xy.DateAxis.new(root, {
             baseInterval: { timeUnit: config.xTimeUnit || "minute", count: 1 },
-            renderer: am5xy.AxisRendererX.new(root, { minGridDistance: 120 }), // 라벨 겹침 방지를 위한 최소 간격
+            renderer: am5xy.AxisRendererX.new(root, { minGridDistance: 120 }),
             inputDateFormat: "yyyy-MM-ddTHH:mm:ss"
         }));
 
         const consistentFormat = config.xAxisDateFormat || "yy-MM-dd HH:mm";
-        // 일반 라벨 형식
         xAxis.get("dateFormats")["minute"] = consistentFormat;
         xAxis.get("dateFormats")["hour"] = consistentFormat;
         xAxis.get("dateFormats")["day"] = consistentFormat;
         xAxis.get("dateFormats")["week"] = consistentFormat;
         xAxis.get("dateFormats")["month"] = "yyyy-MM";
-        // 날짜 변경 시점 라벨 형식
         xAxis.get("periodChangeDateFormats")["minute"] = consistentFormat;
         xAxis.get("periodChangeDateFormats")["hour"] = consistentFormat;
         xAxis.get("periodChangeDateFormats")["day"] = consistentFormat;
@@ -45,19 +42,29 @@ window.AmChartMakers.PerformanceLineChart = {
 
         // Y축 설정
         config.yAxes.forEach(yConfig => {
-            const yRenderer = am5xy.AxisRendererY.new(root, {});
+            const yRenderer = am5xy.AxisRendererY.new(root, { opposite: yConfig.opposite || false });
             yRenderer.labels.template.set("fill", textColor);
             yRenderer.grid.template.setAll({ stroke: gridColor, strokeOpacity: 0.15 });
-            const yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, { renderer: yRenderer }));
+
+            const yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
+                renderer: yRenderer,
+                axisTitle: am5.Label.new(root, {
+                    text: yConfig.title,
+                    fill: textColor,
+                    rotation: -90,
+                    fontSize: "0.8em",
+                    fontWeight: "500"
+                })
+            }));
+
             if (yConfig.min !== undefined) yAxis.set("min", yConfig.min);
             if (yConfig.max !== undefined) yAxis.set("max", yConfig.max);
         });
 
         // 시리즈 설정
         config.series.forEach(seriesConfig => {
-            // ✅ 1. 툴팁 색상을 시리즈(그래프) 색상과 일치시킴
             const tooltip = am5.Tooltip.new(root, {
-                labelText: seriesConfig.tooltipText,
+                labelText: `${seriesConfig.name}: ${seriesConfig.tooltipText}`,
                 getFillFromSprite: true,
                 getLabelFillFromSprite: true
             });
@@ -65,7 +72,7 @@ window.AmChartMakers.PerformanceLineChart = {
             const series = chart.series.push(am5xy.LineSeries.new(root, {
                 name: seriesConfig.name,
                 xAxis: xAxis,
-                yAxis: chart.yAxes.getIndex(0),
+                yAxis: chart.yAxes.getIndex(seriesConfig.yAxisIndex || 0),
                 valueYField: seriesConfig.valueField,
                 valueXField: config.xField,
                 stroke: am5.color(seriesConfig.color),
@@ -74,7 +81,6 @@ window.AmChartMakers.PerformanceLineChart = {
             }));
             series.strokes.template.setAll({ strokeWidth: seriesConfig.strokeWidth || 2 });
 
-            // ✅ 2. 데이터 포인트 크기 (C#에서 받은 값 사용)
             if (seriesConfig.bulletRadius > 0) {
                 series.bullets.push(() => am5.Bullet.new(root, {
                     sprite: am5.Circle.new(root, {
