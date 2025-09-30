@@ -15,6 +15,10 @@ namespace ITM.Dashboard.Api.Controllers
         public DateTime Timestamp { get; set; }
         public double CpuUsage { get; set; }
         public double MemoryUsage { get; set; }
+        // ▼▼▼ [추가] 온도, 팬 속성 추가 ▼▼▼
+        public double CpuTemp { get; set; }
+        public double GpuTemp { get; set; }
+        public double FanSpeed { get; set; }
     }
 
     [Route("api/[controller]")]
@@ -49,7 +53,10 @@ namespace ITM.Dashboard.Api.Controllers
                     eqpid,
                     (timestamp 'epoch' + (floor(extract(epoch from serv_ts) / {intervalSeconds}) * {intervalSeconds}) * interval '1 second') as interval_time,
                     AVG(cpu_usage) as avg_cpu,
-                    AVG(mem_usage) as avg_mem
+                    AVG(mem_usage) as avg_mem,
+                    AVG(cpu_temp) as avg_cpu_temp,
+                    AVG(gpu_temp) as avg_gpu_temp,
+                    AVG(fan_speed) as avg_fan_speed
                 FROM public.eqp_perf
                 WHERE eqpid = ANY(@eqpids)
                   AND serv_ts >= @startDate
@@ -71,7 +78,11 @@ namespace ITM.Dashboard.Api.Controllers
                     EqpId = reader.GetString(0),
                     Timestamp = reader.GetDateTime(1),
                     CpuUsage = reader.GetDouble(2),
-                    MemoryUsage = reader.GetDouble(3)
+                    MemoryUsage = reader.GetDouble(3),
+                    // ▼▼▼ [추가] 조회된 값을 DTO 속성에 할당 ▼▼▼
+                    CpuTemp = reader.GetDouble(4),
+                    GpuTemp = reader.GetDouble(5),
+                    FanSpeed = reader.GetDouble(6)
                 });
             }
             return Ok(results);
