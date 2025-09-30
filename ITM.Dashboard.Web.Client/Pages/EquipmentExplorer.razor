@@ -1,4 +1,4 @@
-@* ITM.Dashboard/ITM.Dashboard.Web.Client/Pages/EquipmentExplorer.razor *@
+@* ITM.Dashboard.Web.Client/Pages/EquipmentExplorer.razor *@
 
 @page "/equipment-explorer"
 @using ITM.Dashboard.Web.Client.Models
@@ -148,7 +148,7 @@ else
     {
         _selectedSdwt = newSdwt;
         _selectedEqpId = null;
-        
+
         if (!string.IsNullOrEmpty(_selectedSite))
         {
             var client = HttpClientFactory.CreateClient("ITM.Dashboard.Api");
@@ -187,7 +187,7 @@ else
 
         var client = HttpClientFactory.CreateClient("ITM.Dashboard.Api");
         var query = new List<string>();
-        
+
         if (!string.IsNullOrEmpty(_selectedEqpId))
         {
             query.Add($"eqpid={Uri.EscapeDataString(_selectedEqpId)}");
@@ -200,10 +200,10 @@ else
         {
             query.Add($"site={Uri.EscapeDataString(_selectedSite)}");
         }
-        
+
         var queryString = string.Join("&", query);
         _equipmentList = await client.GetFromJsonAsync<List<EquipmentSpecDto>>($"api/Equipment/details?{queryString}") ?? new();
-        
+
         _isLoading = false;
         StateHasChanged();
     }
@@ -225,7 +225,7 @@ else
         var formattedSystemType = systemType.Replace("-bit", "bit");
         return $"{formattedOs} {formattedSystemType}".Trim();
     }
-    
+
     private string FormatTimezone(string timezone)
     {
         if (string.IsNullOrEmpty(timezone)) return string.Empty;
