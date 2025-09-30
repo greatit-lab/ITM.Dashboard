@@ -1,9 +1,10 @@
 @* ITM.Dashboard.Web.Client/Layout/NavMenu.razor *@
+
 <div class="pa-4">
     <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
         <MudIcon Icon="@Icons.Material.Rounded.Explore" />
         <MudText Typo="Typo.h6" Class="ml-2">Side Menu</MudText>
-    </MuStack>
+    </MudStack>
     <MudDivider />
 </div>
 <MudNavMenu>
@@ -11,7 +12,7 @@
     <MudNavLink Href="equipment-explorer" Icon="@Icons.Material.Rounded.Computer">Equipment Specs</MudNavLink>
 
     <MudNavGroup Title="Wafer Metrology" Icon="@Icons.Material.Rounded.SquareFoot" Expanded="true">
-        <MudNavLink Href="waferflatdata" Icon="@Icons.Material.Rounded.Analytics">Wafer Flat Data</MudNavLink>
+        <MudNavLink Href="waferflatdata" Icon="@Icons.Material.Rounded.DataObject">Wafer Flat Data</MudNavLink>
         <MudNavLink Href="lot-uniformity-trend" Icon="@Icons.Material.Rounded.StackedLineChart">Lot Uniformity</MudNavLink>
     </MudNavGroup>
 
