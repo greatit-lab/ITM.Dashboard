@@ -6,21 +6,48 @@
 
 <PageTitle>Equipment Specs</PageTitle>
 
-@* ▼▼▼ [핵심 수정] 테이블 스타일을 재정의합니다. ▼▼▼ *@
 <style>
-    .specs-grid .mud-table-cell {
-        font-size: 0.8rem;
-        /* white-space: nowrap; - 줄바꿈을 허용하기 위해 제거 */
-        line-height: 1.4; /* 줄 간격 설정 */
+    .custom-table {
+        width: 100%;
+        border-spacing: 0;
+        border-collapse: collapse;
     }
+
+        .custom-table th, .custom-table td {
+            padding: 10px;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            border-bottom: 1px solid var(--mud-palette-divider);
+            text-align: left;
+        }
+
+        .custom-table th {
+            font-weight: 500;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        .custom-table tbody tr:hover {
+            background-color: var(--mud-palette-action-hover);
+        }
+
+        /* ▼▼▼ [핵심 수정 1/3] 테이블 홀수 행에 명확한 배경색을 적용합니다. ▼▼▼ */
+        .custom-table.striped tbody tr:nth-child(odd) {
+            background-color: rgba(0,0,0, 0.02); /* 라이트 모드용 줄무늬 색상 */
+        }
+
+    .mud-theme-dark .custom-table.striped tbody tr:nth-child(odd) {
+        background-color: rgba(255,255,255, 0.04); /* 다크 모드용 줄무늬 색상 */
+    }
+
     .grid-container {
-        overflow-x: auto; /* 테이블이 넘칠 경우 가로 스크롤바 생성 */
+        overflow-x: auto;
     }
 </style>
 
 <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
     <MudIcon Icon="@Icons.Material.Rounded.Computer" Size="Size.Large" />
-    <MudText Typo="Typo.h4">Equipment Specs</MudText>
+    <MudText Typo="Typo.h4">ITM Equip Specs</MudText>
 </MudStack>
 
 <MudPaper Class="pa-2 mb-4">
@@ -55,55 +82,77 @@
     </MudGrid>
 </MudPaper>
 
-@if (!_isInitialState)
+@if (_isLoading)
 {
-    @* ▼▼▼ [핵심 수정] MudDataGrid를 div로 감싸고, Column의 Style을 제거하여 자동 너비 조절을 유도합니다. ▼▼▼ *@
-    <div class="grid-container">
-        <MudDataGrid T="EquipmentSpecDto" Items="_equipmentList" Hover="true" Dense="true" Striped="true"
-                     Sortable="true" Filterable="false" Bordered="true"
-                     Loading="_isLoading"
-                     RowsPerPage="15"
-                     Class="specs-grid">
-            <Columns>
-                <PropertyColumn Property="x => x.Type" Title="ITM Type" />
-                <PropertyColumn Property="x => x.EqpId" Title="EQP ID" />
-                <PropertyColumn Property="x => x.SystemModel" Title="Model" />
-                <PropertyColumn Property="x => x.Application" Title="Application" />
-                <PropertyColumn Property="x => x.Version" Title="App Ver" />
-                <PropertyColumn Property="x => x.DbVersion" Title="DB Ver" />
-                <PropertyColumn Property="x => x.SerialNum" Title="Serial Num" />
-                <PropertyColumn Property="x => x.PcName" Title="PC Name" />
-                <PropertyColumn Property="x => x.IpAddress" Title="IP Address" />
-                <PropertyColumn Property="x => x.MacAddress" Title="MAC Address" />
-                <TemplateColumn Title="Operation System(OS)" SortBy="x => x.Os">
-                    <CellTemplate>
-                        @FormatOperatingSystem(context.Item.Os, context.Item.SystemType)
-                    </CellTemplate>
-                </TemplateColumn>
-                <PropertyColumn Property="x => x.Locale" Title="Locale" />
-                <TemplateColumn Title="Timezone" SortBy="x => x.Timezone">
-                    <CellTemplate>
-                        @FormatTimezone(context.Item.Timezone)
-                    </CellTemplate>
-                </TemplateColumn>
-                <PropertyColumn Property="x => x.Cpu" Title="CPU" />
-                <PropertyColumn Property="x => x.Memory" Title="Memory" />
-                <PropertyColumn Property="x => x.Disk" Title="Disk" />
-                <PropertyColumn Property="x => x.Vga" Title="VGA" />
-                <PropertyColumn Property="x => x.LastContact" Title="Last Contact" Format="yy-MM-dd" />
-            </Columns>
-            <PagerContent>
-                <MudDataGridPager T="EquipmentSpecDto" />
-            </PagerContent>
-            <NoRecordsContent>
-                <MudText>조회된 장비 정보가 없습니다.</MudText>
-            </NoRecordsContent>
-        </MudDataGrid>
+    <div class="d-flex justify-center align-center pa-4">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
     </div>
+}
+else if (!_isInitialState)
+{
+    <MudPaper Class="grid-container" Outlined="true">
+        <table class="custom-table striped">
+            <thead class="mud-table-head">
+                <tr>
+                    <th rowspan="2" style="min-width: 130px; text-align: left;">EQP ID</th>
+                    @* ▼▼▼ [핵심 수정 2/3] 그룹 헤더 첫 행에만 구분선을 적용합니다. ▼▼▼ *@
+                    <th colspan="6" style="text-align: center; border-right: 1px solid var(--mud-palette-divider);">ITM INFO</th>
+                    <th colspan="10" style="text-align: center;">HOST SERVER INFO</th>
+                    <th rowspan="2" style="min-width: 120px; text-align: left;">Last Contact</th>
+                </tr>
+                <tr>
+                    <th style="min-width: 100px;">ITM Type</th>
+                    <th style="min-width: 150px;">Model</th>
+                    <th style="min-width: 150px;">Application</th>
+                    <th style="min-width: 90px;">App Ver</th>
+                    <th style="min-width: 90px;">DB Ver</th>
+                    @* ▼▼▼ [핵심 수정 3/3] 두 번째 행의 구분선을 제거합니다. ▼▼▼ *@
+                    <th style="min-width: 150px;">Serial Num</th>
+
+                    <th style="min-width: 150px;">PC Name</th>
+                    <th style="min-width: 130px;">IP Address</th>
+                    <th style="min-width: 150px;">MAC Address</th>
+                    <th style="min-width: 180px;">Operation System(OS)</th>
+                    <th style="min-width: 90px;">Locale</th>
+                    <th style="min-width: 90px;">Timezone</th>
+                    <th style="min-width: 250px;">CPU</th>
+                    <th style="min-width: 150px;">Memory</th>
+                    <th style="min-width: 250px;">Disk</th>
+                    <th style="min-width: 250px;">VGA</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var context in _pagedEquipmentList)
+                {
+                    <tr>
+                        <td style="text-align: left;">@context.EqpId</td>
+                        <td>@context.Type</td>
+                        <td>@context.SystemModel</td>
+                        <td>@context.Application</td>
+                        <td>@context.Version</td>
+                        <td>@context.DbVersion</td>
+                        <td>@context.SerialNum</td>
+                        <td>@context.PcName</td>
+                        <td>@context.IpAddress</td>
+                        <td>@context.MacAddress</td>
+                        <td>@FormatOperatingSystem(context.Os, context.SystemType)</td>
+                        <td>@context.Locale</td>
+                        <td>@FormatTimezone(context.Timezone)</td>
+                        <td>@context.Cpu</td>
+                        <td>@context.Memory</td>
+                        <td>@context.Disk</td>
+                        <td>@context.Vga</td>
+                        <td style="text-align: left;">@context.LastContact?.ToString("yy-MM-dd")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </MudPaper>
+    <MudPagination Count="_totalPages" SelectedChanged="OnPageChanged" Class="mt-4" />
 }
 else
 {
-    <MudAlert Severity="Severity.Info">Site와 SDWT를 선택하여 장비 정보를 조회하세요.</MudAlert>
+    <MudAlert Severity="Severity.Info">Site를 선택하여 장비 정보를 조회하세요.</MudAlert>
 }
 
 
@@ -115,15 +164,33 @@ else
     private string _selectedSite;
     private string _selectedSdwt;
     private string _selectedEqpId;
-
     private bool _isLoading = false;
     private bool _isInitialState = true;
+
+    // Pagination
     private List<EquipmentSpecDto> _equipmentList = new();
+    private IEnumerable<EquipmentSpecDto> _pagedEquipmentList = new List<EquipmentSpecDto>();
+    private int _currentPage = 1;
+    private int _rowsPerPage = 15;
+    private int _totalPages = 0;
 
     protected override async Task OnInitializedAsync()
     {
         var client = HttpClientFactory.CreateClient("ITM.Dashboard.Api");
         _sites = await client.GetFromJsonAsync<List<string>>("api/Filters/sites") ?? new();
+    }
+
+    private void UpdatePagination()
+    {
+        _totalPages = (int)Math.Ceiling(_equipmentList.Count / (double)_rowsPerPage);
+        _pagedEquipmentList = _equipmentList.Skip((_currentPage - 1) * _rowsPerPage).Take(_rowsPerPage);
+        StateHasChanged();
+    }
+
+    private void OnPageChanged(int page)
+    {
+        _currentPage = page;
+        UpdatePagination();
     }
 
     private async Task OnSiteChanged(string newSite)
@@ -135,13 +202,13 @@ else
         _availableEqpIds.Clear();
         _equipmentList.Clear();
         _isInitialState = true;
-
         if (!string.IsNullOrEmpty(_selectedSite))
         {
             var client = HttpClientFactory.CreateClient("ITM.Dashboard.Api");
             _sdwts = await client.GetFromJsonAsync<List<string>>($"api/Filters/sdwts/{_selectedSite}") ?? new();
             _availableEqpIds = await client.GetFromJsonAsync<List<string>>($"api/Equipment/eqpids?site={_selectedSite}") ?? new();
         }
+        UpdatePagination();
     }
 
     private async Task OnSdwtChanged(string newSdwt)
@@ -161,7 +228,6 @@ else
                 _availableEqpIds = await client.GetFromJsonAsync<List<string>>($"api/Equipment/eqpids?site={_selectedSite}") ?? new();
             }
         }
-
         await LoadEquipmentDetails();
     }
 
@@ -173,10 +239,11 @@ else
 
     private async Task LoadEquipmentDetails()
     {
-        if (string.IsNullOrEmpty(_selectedSite) || string.IsNullOrEmpty(_selectedSdwt))
+        if (string.IsNullOrEmpty(_selectedSite))
         {
             _equipmentList.Clear();
             _isInitialState = true;
+            UpdatePagination();
             StateHasChanged();
             return;
         }
@@ -203,9 +270,10 @@ else
 
         var queryString = string.Join("&", query);
         _equipmentList = await client.GetFromJsonAsync<List<EquipmentSpecDto>>($"api/Equipment/details?{queryString}") ?? new();
-
         _isLoading = false;
-        StateHasChanged();
+
+        _currentPage = 1;
+        UpdatePagination();
     }
 
     private async Task<IEnumerable<string>> SearchEqpIds(string value, CancellationToken token)
@@ -215,7 +283,7 @@ else
         {
             return _availableEqpIds;
         }
-        return _availableEqpIds.Where(x => x.Contains(value, StringComparison.OrdinalIgnoreCase));
+        return _availableEqpIds.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
     }
 
     private string FormatOperatingSystem(string os, string systemType)
