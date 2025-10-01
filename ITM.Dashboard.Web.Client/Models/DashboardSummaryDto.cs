@@ -7,5 +7,6 @@ namespace ITM.Dashboard.Web.Client.Models
         public int OnlineAgentCount { get; set; }
         public int TodayErrorCount { get; set; }
         public long TodayDataCount { get; set; }
+        public int NewAlarmCount { get; set; } // [추가] 신규 알람 수
     }
 }
