@@ -51,9 +51,9 @@ window.AmChartMakers.LotUniformityMapChart = {
             const rangeDataItem = axis.makeDataItem({
                 value: value
             });
-            
+
             axis.createAxisRange(rangeDataItem);
-            
+
             rangeDataItem.get("grid").setAll({
                 stroke: gridColor,
                 strokeOpacity: 0.2,
@@ -62,11 +62,11 @@ window.AmChartMakers.LotUniformityMapChart = {
         }
 
         // -6, -4, -2, 0, 2, 4, 6 위치에 세로선(X축 격자)을 그립니다.
-        for (let i = -6; i <= 6; i += 2) {
+        for (let i = -6; i <= 6; i += 1) {
             createGridLine(xAxis, i);
         }
         // -6, -4, -2, 0, 2, 4, 6 위치에 가로선(Y축 격자)을 그립니다.
-        for (let i = -6; i <= 6; i += 2) {
+        for (let i = -6; i <= 6; i += 1) {
             createGridLine(yAxis, i);
         }
         // ▲▲▲ [핵심 수정] 여기까지 ▲▲▲
@@ -107,14 +107,14 @@ window.AmChartMakers.LotUniformityMapChart = {
         // 데이터 포인트와 라벨을 그리는 bullet 설정
         series.bullets.push(function () {
             const container = am5.Container.new(root, {});
-            
+
             container.children.push(am5.Circle.new(root, {
                 radius: 5,
                 fill: am5.color(config.pointColor || "#81C784"),
                 stroke: am5.color(isDarkMode ? 0x000000 : 0xffffff),
                 strokeWidth: 1
             }));
-            
+
             const label = container.children.push(am5.Label.new(root, {
                 text: "{value}",
                 populateText: true,
@@ -123,7 +123,7 @@ window.AmChartMakers.LotUniformityMapChart = {
                 centerX: am5.p50,
                 dy: 15
             }));
-            
+
             return am5.Bullet.new(root, {
                 sprite: container,
                 alwaysShow: true
