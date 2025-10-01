@@ -71,7 +71,6 @@ else
             <MudPaper @onclick='() => SetActiveFilter("Alarm")'
                       Class="@GetCardClass("Alarm")" Style="height:160px; cursor:pointer;">
                 <MudIcon Icon="@Icons.Material.Rounded.ErrorOutline" Color="Color.Warning" Style="font-size: 48px;" />
-                @* ▼▼▼ [수정] 신규 알람 수를 표시하도록 수정 ▼▼▼ *@
                 <MudStack Spacing="0" AlignItems="AlignItems.Center">
                     <MudText Typo="Typo.h6" Class="mt-2">@_summary?.TodayErrorCount</MudText>
                     @if (_summary?.NewAlarmCount > 0)
@@ -96,7 +95,11 @@ else
                     <MudTh>PC Name</MudTh>
                     <MudTh>Operating System(OS)</MudTh>
                     <MudTh Style="width: 150px;">CPU / Memory</MudTh>
-                    <MudTh>Clock Drift</MudTh> @* [추가] ClockDrift 컬럼 헤더 *@
+                    <MudTh>
+                        <MudTooltip Text="+: Agent Slow, -: Agent Fast" Arrow="true" Placement="Placement.Top">
+                            Time Difference
+                        </MudTooltip>
+                    </MudTh>
                     <MudTh>Last Contact</MudTh>
                     <MudTh>Agent Ver'</MudTh>
                 </HeaderContent>
@@ -139,10 +142,9 @@ else
                             <MudProgressLinear Color="Color.Info" Value="@context.MemoryUsage" Class="rounded" Style="height:10px;" />
                         </MudPaper>
                     </MudTd>
-                    @* ▼▼▼ [추가] ClockDrift 컬럼 데이터 표시 ▼▼▼ *@
-                    <MudTd DataLabel="Clock Drift">
+                    <MudTd DataLabel="Time Difference">
                         <MudText Typo="Typo.body2" Color="@GetClockDriftColor(context.ClockDrift)">
-                            @FormatClockDrift(context.ClockDrift)
+                            @FormatTimeDifference(context.ClockDrift)
                         </MudText>
                     </MudTd>
                     <MudTd DataLabel="Last Contact">@context.LastContact?.ToString("yy-MM-dd HH:mm:ss")</MudTd>
@@ -177,7 +179,6 @@ else
         "Alarm" => _agentStatusList.Where(a => a.TodayAlarmCount > 0),
         _ => _agentStatusList,
     };
-
     private void SetActiveFilter(string filterType)
     {
         _activeFilter = filterType;
@@ -282,19 +283,34 @@ else
         }
     }
 
-    // ▼▼▼ [추가] ClockDrift 값을 포맷팅하고 색상을 결정하는 헬퍼 메서드 ▼▼▼
-    private string FormatClockDrift(double? seconds)
+    private string FormatTimeDifference(double? seconds)
     {
         if (!seconds.HasValue) return "N/A";
-        return $"{seconds.Value:+#.0;-#.0;0.0}s";
+        if (Math.Abs(seconds.Value) < 0.1) return "✔︎";
+
+        var sign = seconds.Value > 0 ? "+" : "-";
+        var timeSpan = TimeSpan.FromSeconds(Math.Abs(seconds.Value));
+
+        var parts = new List<string>();
+        if (timeSpan.Hours > 0) parts.Add($"{timeSpan.Hours}h");
+        if (timeSpan.Minutes > 0) parts.Add($"{timeSpan.Minutes}m");
+        if (timeSpan.Seconds > 0 || parts.Count == 0) parts.Add($"{timeSpan.Seconds}s");
+
+        return $"{sign} {string.Join(" ", parts)}";
     }
 
+    // ▼▼▼ [핵심 수정] 빠름/느림 상태에 따라 다른 색상을 반환하도록 로직 변경 ▼▼▼
     private Color GetClockDriftColor(double? seconds)
     {
         if (!seconds.HasValue) return Color.Default;
-        var drift = Math.Abs(seconds.Value);
-        if (drift > 5) return Color.Error;
-        if (drift > 2) return Color.Warning;
-        return Color.Default;
+
+        var drift = seconds.Value;
+        var absDrift = Math.Abs(drift);
+
+        if (absDrift > 60) return Color.Error;   // 1분 이상 차이나면 에러 (빨강)
+        if (drift > 0.1) return Color.Warning; // 0.1초보다 느리면 경고 (주황)
+        if (drift < -0.1) return Color.Info;    // 0.1초보다 빠르면 정보 (파랑)
+
+        return Color.Success; // 거의 정확하면 성공 (초록)
     }
 }
