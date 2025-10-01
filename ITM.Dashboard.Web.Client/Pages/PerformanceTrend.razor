@@ -96,7 +96,7 @@
     <MudGrid Spacing="3">
         @* --- 좌측 열 --- *@
         <MudItem xs="12" md="6">
-            <MudText Typo="Typo.h5" GutterBottom="true" Class="mb-3"><b>CPU</b></MudText>
+            <MudText Typo="Typo.h5" GutterBottom="true" Class="mb-3"><b>▶ CPU</b></MudText>
             <MudStack Spacing="3">
                 @* (좌측 상단) CPU Usage Chart *@
                 <MudPaper Class="pa-4" Style="height:350px; position:relative;">
@@ -140,7 +140,7 @@
 
         @* --- 우측 열 --- *@
         <MudItem xs="12" md="6">
-            <MudText Typo="Typo.h5" GutterBottom="true" Class="mb-3"><b>Memory & GPU</b></MudText>
+            <MudText Typo="Typo.h5" GutterBottom="true" Class="mb-3"><b>▶ Memory & GPU</b></MudText>
             <MudStack Spacing="3">
                 @* (우측 상단) Memory Usage Chart *@
                 <MudPaper Class="pa-4" Style="height:350px; position:relative;">
@@ -283,8 +283,7 @@ else
         _cpuUsageChartConfig = new
         {
             xField = "timestamp",
-            xAxisDateFormat = "MM-dd HH:mm",
-            yAxes = new object[] { new { max = 100, title = "Usage (%)" } }, // ✅ min = 0 제거
+            yAxes = new object[] { new { title = "Usage (%)" } },
             series = new[] {
                 new { name = "CPU", valueField = "cpuUsage", color = "#33b2ff", bulletRadius = 2, tooltipText = "{valueX.formatDate('HH:mm:ss')}:[/] [bold]{name}: {valueY.formatNumber('#.00')}%" }
             }
@@ -294,8 +293,8 @@ else
             xField = "timestamp",
             xAxisDateFormat = "MM-dd HH:mm",
             yAxes = new object[] {
-                new { title = "Temp (°C)" }, // ✅ min = 0 제거
-                new { opposite = true, title = "Fan (RPM)" } // ✅ min = 0 제거
+                new { title = "Temp (°C)" },
+                new { opposite = true, title = "Fan (RPM)" }
              },
             series = new object[] {
                 new { name = "CPU Temp", valueField = "cpuTemp", yAxisIndex = 0, color = "#ffc400", bulletRadius = 2, tooltipText = "{valueX.formatDate('HH:mm:ss')}:[/] [bold]{name}: {valueY.formatNumber('#.0')}°C" },
@@ -305,8 +304,7 @@ else
         _memoryUsageChartConfig = new
         {
             xField = "timestamp",
-            xAxisDateFormat = "MM-dd HH:mm",
-            yAxes = new object[] { new { max = 100, title = "Usage (%)" } }, // ✅ min = 0 제거
+            yAxes = new object[] { new { title = "Usage (%)" } },
             series = new[] {
                 new { name = "Memory", valueField = "memoryUsage", color = "#39e6a3", bulletRadius = 2, tooltipText = "{valueX.formatDate('HH:mm:ss')}:[/] [bold]{name}: {valueY.formatNumber('#.00')}%" }
             }
@@ -314,8 +312,7 @@ else
         _gpuTempChartConfig = new
         {
             xField = "timestamp",
-            xAxisDateFormat = "MM-dd HH:mm",
-            yAxes = new object[] { new { title = "Temp (°C)" } }, // ✅ min = 0 제거
+            yAxes = new object[] { new { title = "Temp (°C)" } },
             series = new[] {
                 new { name = "GPU Temp", valueField = "gpuTemp", color = "#ff8c00", bulletRadius = 2, tooltipText = "{valueX.formatDate('HH:mm:ss')}:[/] [bold]{name}: {valueY.formatNumber('#.0')}°C" }
             }
