@@ -12,8 +12,6 @@ namespace ITM.Dashboard.Api.Models
         public double CpuUsage { get; set; }
         public double MemoryUsage { get; set; }
         public string AppVersion { get; set; }
-
-        // ▼▼▼ [추가] 새로운 속성들 ▼▼▼
         public string Type { get; set; }
         public string IpAddress { get; set; }
         public string Os { get; set; }
@@ -21,5 +19,6 @@ namespace ITM.Dashboard.Api.Models
         public string Locale { get; set; }
         public string Timezone { get; set; }
         public int TodayAlarmCount { get; set; }
+        public double? ClockDrift { get; set; } // [추가] 시간 차이 (초)
     }
 }
