@@ -18,12 +18,18 @@
         @* --- 1열 --- *@
         <MudItem xs="12" sm="4" md="2">
             <MudSelect T="string" Label="Site" Value="_selectedSite" ValueChanged="OnSiteChanged" Dense="true" Margin="Margin.Dense">
-                @foreach (var site in _sites) { <MudSelectItem Value="@site">@site</MudSelectItem> }
+                @foreach (var site in _sites)
+                {
+                    <MudSelectItem Value="@site">@site</MudSelectItem>
+                }
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="4" md="2">
             <MudSelect T="string" Label="SDWT" Value="_selectedSdwt" ValueChanged="OnSdwtChanged" Disabled="string.IsNullOrEmpty(_selectedSite)" Dense="true" Margin="Margin.Dense">
-                @foreach (var sdwt in _sdwts) { <MudSelectItem Value="@sdwt">@sdwt</MudSelectItem> }
+                @foreach (var sdwt in _sdwts)
+                {
+                    <MudSelectItem Value="@sdwt">@sdwt</MudSelectItem>
+                }
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="4" md="2"><MudAutocomplete T="string" Label="EQP ID" SearchFunc="SearchEqpIds" Value="_selectedEqpId" ValueChanged="OnEqpidChanged" Disabled="string.IsNullOrEmpty(_selectedSdwt)" Dense="true" Margin="Margin.Dense" MaxItems="null" /></MudItem>
@@ -37,7 +43,10 @@
         <MudItem xs="12" sm="4" md="2"><MudAutocomplete T="string" Label="Film" SearchFunc="SearchFilms" Value="_selectedFilm" ValueChanged="OnFilmChanged" Disabled="string.IsNullOrEmpty(_selectedStageGroup)" Dense="true" Margin="Margin.Dense" MaxItems="null" /></MudItem>
         <MudItem xs="12" sm="4" md="2">
             <MudSelect T="string" Label="Y-Axis Metric" Value="_selectedMetric" ValueChanged="OnMetricChanged" Dense="true" Margin="Margin.Dense">
-                @foreach (var metric in _availableMetrics) { <MudSelectItem Value="@metric">@metric.ToUpper()</MudSelectItem> }
+                @foreach (var metric in _availableMetrics)
+                {
+                    <MudSelectItem Value="@metric">@metric.ToUpper()</MudSelectItem>
+                }
             </MudSelect>
         </MudItem>
         <MudItem xs="6" sm="2" md="1"><MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OnSearchClicked" Disabled="string.IsNullOrEmpty(_selectedStageGroup)" FullWidth="true">Search</MudButton></MudItem>
@@ -90,16 +99,12 @@ else
     private string _selectedSite, _selectedSdwt, _selectedEqpId, _selectedLotId, _selectedCassetteRcp, _selectedStageGroup, _selectedFilm, _selectedMetric = "t1";
     private DateTime? _startDate = DateTime.Now.Date.AddDays(-6), _endDate = DateTime.Now.Date;
     private List<string> _sites = new(), _sdwts = new(), _availableEqpIds = new(), _availableLotIds = new(), _availableCassetteRcps = new(), _availableStageGroups = new(), _availableFilms = new(), _availableMetrics = new();
-    
-    // ▼▼▼ [수정] 차트 데이터를 라인차트와 맵차트용으로 분리합니다. ▼▼▼
+
     private List<LotUniformityChartData> _lineChartData = new();
     private List<LotUniformityChartData> _mapChartData = new();
-    // ▲▲▲ [수정] 여기까지 ▲▲▲
 
-    // ▼▼▼ [수정] 차트 설정을 라인차트와 맵차트용으로 분리합니다. ▼▼▼
     private object _lineChartConfig;
     private object _mapChartConfig;
-    // ▲▲▲ [수정] 여기까지 ▲▲▲
 
     protected override async Task OnInitializedAsync()
     {
@@ -108,8 +113,7 @@ else
 
         _mapChartConfig = new { pointColor = "#81C784" };
     }
-    
-    // ... (OnDateChanged, OnMetricChanged, 필터 변경 이벤트 핸들러들은 그대로 유지) ...
+
     private async Task OnDateChanged()
     {
         if (!string.IsNullOrEmpty(_selectedEqpId))
@@ -283,8 +287,8 @@ else
                 Value = dp.Value,
                 X = dp.X,
                 Y = dp.Y,
-                DieCol = dp.DieCol.HasValue ? dp.DieCol + 0.5 : null,
-                DieRow = dp.DieRow.HasValue ? dp.DieRow + 1 : null
+                DieCol = dp.DieCol,
+                DieRow = dp.DieRow
             })).ToList() ?? new List<LotUniformityChartData>();
 
             _lineChartData = allPoints;
@@ -313,22 +317,20 @@ else
 
                     if (maxAbsCoord > 0)
                     {
-                        // ▼▼▼ [수정] 정규화 비율을 6.0에서 5.5로 조정하여 테두리 안쪽에 위치하도록 합니다. ▼▼▼
-                        const double scaleFactor = 5.5; 
+                        const double scaleFactor = 4.8;
                         _mapChartData = uniquePoints.Select(p => {
                             p.MapX = (p.X / maxAbsCoord) * scaleFactor;
                             p.MapY = (p.Y / maxAbsCoord) * scaleFactor;
                             return p;
                         }).ToList();
-                        // ▲▲▲ [수정] 여기까지 ▲▲▲
                     }
                     else
                     {
-                         _mapChartData = uniquePoints;
+                        _mapChartData = uniquePoints;
                     }
                 }
             }
-            
+
             _lineChartConfig = new { xTitle = "Point #", yTitle = _selectedMetric.ToUpper() };
         }
         catch (Exception ex) { Console.WriteLine($"Error loading chart data: {ex.Message}"); }
@@ -345,7 +347,7 @@ else
         _selectedSite = _selectedSdwt = _selectedEqpId = _selectedLotId = _selectedCassetteRcp = _selectedStageGroup = _selectedFilm = null;
         _startDate = DateTime.Now.Date.AddDays(-6); _endDate = DateTime.Now.Date;
         _sdwts.Clear(); _availableEqpIds.Clear(); _availableLotIds.Clear(); _availableCassetteRcps.Clear(); _availableStageGroups.Clear(); _availableFilms.Clear();
-        _isSearched = false; 
+        _isSearched = false;
         _lineChartData.Clear();
         _mapChartData.Clear();
 
