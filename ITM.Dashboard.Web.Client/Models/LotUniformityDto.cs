@@ -3,8 +3,13 @@ using System.Collections.Generic;
 
 public class LotUniformityDataPointDto
 {
-    public int Point { get; set; } // X축
-    public double Value { get; set; } // Y축
+    public int Point { get; set; } 
+    public double Value { get; set; }
+    public double X { get; set; }
+    public double Y { get; set; }
+
+    public double? DieRow { get; set; }
+    public double? DieCol { get; set; }
 }
 
 public class LotUniformitySeriesDto
