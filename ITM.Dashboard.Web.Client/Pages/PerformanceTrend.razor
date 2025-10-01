@@ -45,17 +45,25 @@
                              Disabled="@(_filterState < FilterState.SelectEqpId || _filterState == FilterState.RealTime)" />
         </MudItem>
 
-        @* ▼▼▼ [요청사항] 날짜 및 시간 범위 선택 필드로 변경 ▼▼▼ *@
-        <MudItem xs="12" sm="8" md="4">
-            <MudStack Row="true">
-                <MudDateRangePicker @bind-DateRange="_dateRange" Label="Date Range" Dense="true" Margin="Margin.Dense"
-                                    Disabled="@(_filterState < FilterState.ReadyToSearch || _filterState == FilterState.RealTime)" />
-                <MudTimePicker Label="Start Time" @bind-Time="_startTime" TimeEditMode="TimeEditMode.Normal" Dense="true" Margin="Margin.Dense"
-                               Disabled="@(_filterState < FilterState.ReadyToSearch || _filterState == FilterState.RealTime)" />
-                <MudTimePicker Label="End Time" @bind-Time="_endTime" TimeEditMode="TimeEditMode.Normal" Dense="true" Margin="Margin.Dense"
-                               Disabled="@(_filterState < FilterState.ReadyToSearch || _filterState == FilterState.RealTime)" />
-            </MudStack>
+        @* ▼▼▼ [수정] DateRangePicker를 Start/End Date, Start/End Time 필드로 분리합니다. ▼▼▼ *@
+        <MudItem xs="6" sm="3" md="1">
+            <MudDatePicker Label="Start Date" @bind-Date="_startDate" Dense="true" Margin="Margin.Dense"
+                           Disabled="@(_filterState < FilterState.ReadyToSearch || _filterState == FilterState.RealTime)" />
         </MudItem>
+        <MudItem xs="6" sm="3" md="1">
+            <MudTimePicker Label="Start Time" @bind-Time="_startTime" TimeEditMode="TimeEditMode.OnlyHours" AmPm="false" Dense="true" Margin="Margin.Dense"
+                           Disabled="@(_filterState < FilterState.ReadyToSearch || _filterState == FilterState.RealTime)" />
+        </MudItem>
+        <MudItem xs="6" sm="3" md="1">
+            <MudDatePicker Label="End Date" @bind-Date="_endDate" Dense="true" Margin="Margin.Dense"
+                           Disabled="@(_filterState < FilterState.ReadyToSearch || _filterState == FilterState.RealTime)" />
+        </MudItem>
+        <MudItem xs="6" sm="3" md="1">
+            <MudTimePicker Label="End Time" @bind-Time="_endTime" TimeEditMode="TimeEditMode.OnlyHours" AmPm="false" Dense="true" Margin="Margin.Dense"
+                           Disabled="@(_filterState < FilterState.ReadyToSearch || _filterState == FilterState.RealTime)" />
+        </MudItem>
+        @* ▲▲▲ [수정] 여기까지 ▲▲▲ *@
+
 
         <MudItem xs="4" sm="3" md="1">
             <MudButton Variant="Variant.Filled" Color="Color.Primary"
@@ -243,10 +251,12 @@ else
     private string? _selectedSdwt;
     private string? _selectedEqpId;
 
-    // ▼▼▼ [수정] 날짜/시간 관련 변수 변경 ▼▼▼
-    private DateRange _dateRange = new DateRange(DateTime.Now.Date.AddDays(-1), DateTime.Now.Date);
+    // ▼▼▼ [수정] DateRangePicker 대신 개별 DateTime?과 TimeSpan?을 사용합니다. ▼▼▼
+    private DateTime? _startDate = DateTime.Now.Date.AddDays(-1);
+    private DateTime? _endDate = DateTime.Now.Date;
     private TimeSpan? _startTime = new TimeSpan(0, 0, 0);
-    private TimeSpan? _endTime = new TimeSpan(23, 59, 59);
+    private TimeSpan? _endTime = new TimeSpan(23, 0, 0); // 분 단위를 0으로 설정
+    // ▲▲▲ [수정] 여기까지 ▲▲▲
 
     private List<string> _sites = new();
     private List<string> _sdwts = new();
@@ -260,10 +270,10 @@ else
     private object _memoryUsageChartConfig;
     private object _gpuTempChartConfig;
 
-    // ▼▼▼ [추가] 날짜와 시간을 조합하는 속성 ▼▼▼
-    private DateTime EffectiveStartDate => _dateRange.Start.GetValueOrDefault(DateTime.Now.Date).Date + _startTime.GetValueOrDefault(TimeSpan.Zero);
-    private DateTime EffectiveEndDate => _dateRange.End.GetValueOrDefault(DateTime.Now.Date).Date + _endTime.GetValueOrDefault(new TimeSpan(23, 59, 59));
-
+    // ▼▼▼ [수정] 조합된 날짜/시간을 계산하는 속성을 새로운 변수에 맞게 수정합니다. ▼▼▼
+    private DateTime EffectiveStartDate => _startDate.GetValueOrDefault(DateTime.Now.Date).Date + _startTime.GetValueOrDefault(TimeSpan.Zero);
+    private DateTime EffectiveEndDate => _endDate.GetValueOrDefault(DateTime.Now.Date).Date + _endTime.GetValueOrDefault(new TimeSpan(23, 0, 0));
+    // ▲▲▲ [수정] 여기까지 ▲▲▲
 
     protected override async Task OnInitializedAsync()
     {
@@ -273,38 +283,39 @@ else
         _cpuUsageChartConfig = new
         {
             xField = "timestamp",
-            yAxes = new object[] { new { min = 0, max = 100, title = "Usage (%)" } },
+            xAxisDateFormat = "MM-dd HH:mm",
+            yAxes = new object[] { new { max = 100, title = "Usage (%)" } }, // ✅ min = 0 제거
             series = new[] {
                 new { name = "CPU", valueField = "cpuUsage", color = "#33b2ff", bulletRadius = 2, tooltipText = "{valueX.formatDate('HH:mm:ss')}:[/] [bold]{name}: {valueY.formatNumber('#.00')}%" }
             }
         };
-
         _cpuTempFanChartConfig = new
         {
             xField = "timestamp",
+            xAxisDateFormat = "MM-dd HH:mm",
             yAxes = new object[] {
-                new { title = "Temp (°C)", min = 0 },
-                new { opposite = true, title = "Fan (RPM)", min = 0 }
-            },
+                new { title = "Temp (°C)" }, // ✅ min = 0 제거
+                new { opposite = true, title = "Fan (RPM)" } // ✅ min = 0 제거
+             },
             series = new object[] {
                 new { name = "CPU Temp", valueField = "cpuTemp", yAxisIndex = 0, color = "#ffc400", bulletRadius = 2, tooltipText = "{valueX.formatDate('HH:mm:ss')}:[/] [bold]{name}: {valueY.formatNumber('#.0')}°C" },
                 new { name = "Fan Speed", valueField = "fanSpeed", yAxisIndex = 1, color = "#9e9e9e", bulletRadius = 2, tooltipText = "{valueX.formatDate('HH:mm:ss')}:[/] [bold]{name}: {valueY.formatNumber('#')} RPM" }
             }
         };
-
         _memoryUsageChartConfig = new
         {
             xField = "timestamp",
-            yAxes = new object[] { new { min = 0, max = 100, title = "Usage (%)" } },
+            xAxisDateFormat = "MM-dd HH:mm",
+            yAxes = new object[] { new { max = 100, title = "Usage (%)" } }, // ✅ min = 0 제거
             series = new[] {
                 new { name = "Memory", valueField = "memoryUsage", color = "#39e6a3", bulletRadius = 2, tooltipText = "{valueX.formatDate('HH:mm:ss')}:[/] [bold]{name}: {valueY.formatNumber('#.00')}%" }
             }
         };
-
         _gpuTempChartConfig = new
         {
             xField = "timestamp",
-            yAxes = new object[] { new { title = "Temp (°C)", min = 0 } },
+            xAxisDateFormat = "MM-dd HH:mm",
+            yAxes = new object[] { new { title = "Temp (°C)" } }, // ✅ min = 0 제거
             series = new[] {
                 new { name = "GPU Temp", valueField = "gpuTemp", color = "#ff8c00", bulletRadius = 2, tooltipText = "{valueX.formatDate('HH:mm:ss')}:[/] [bold]{name}: {valueY.formatNumber('#.0')}°C" }
             }
@@ -393,11 +404,12 @@ else
     private async Task ResetFilters()
     {
         _selectedSite = _selectedSdwt = _selectedEqpId = null;
-
-        // ▼▼▼ [수정] 날짜/시간 필터 초기화 ▼▼▼
-        _dateRange = new DateRange(DateTime.Now.Date.AddDays(-1), DateTime.Now.Date);
+        // ▼▼▼ [수정] 날짜/시간 필터 초기화 로직 변경 ▼▼▼
+        _startDate = DateTime.Now.Date.AddDays(-1);
+        _endDate = DateTime.Now.Date;
         _startTime = new TimeSpan(0, 0, 0);
-        _endTime = new TimeSpan(23, 59, 59);
+        _endTime = new TimeSpan(23, 0, 0);
+        // ▲▲▲ [수정] 여기까지 ▲▲▲
 
         _sdwts.Clear();
         _availableEqpIds.Clear();
@@ -443,7 +455,6 @@ else
             }
             else
             {
-                // ▼▼▼ [수정] 조합된 날짜/시간 사용 ▼▼▼
                 start = EffectiveStartDate;
                 end = EffectiveEndDate;
 
@@ -486,11 +497,9 @@ else
         foreach (var group in data.GroupBy(d => d.EqpId))
         {
             if (!group.Any()) continue;
-
             var cpuPeakDataPoint = group.OrderByDescending(d => d.CpuUsage).FirstOrDefault();
             var memoryPeakDataPoint = group.OrderByDescending(d => d.MemoryUsage).FirstOrDefault();
             var gpuPeakDataPoint = group.OrderByDescending(d => d.GpuTemp).FirstOrDefault();
-
             var summary = new PerformanceSummary();
 
             if (cpuPeakDataPoint != null)
