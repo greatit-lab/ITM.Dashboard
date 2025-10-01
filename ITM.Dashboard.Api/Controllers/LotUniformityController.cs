@@ -18,7 +18,7 @@ public class LotUniformityController : ControllerBase
         [FromQuery] string lotId,
         [FromQuery] string cassetteRcp,
         [FromQuery] string stageGroup,
-        [FromQuery] string? film, // ✅ [수정] film 파라미터를 nullable로 변경
+        [FromQuery] string? film,
         [FromQuery] string yAxisMetric,
         [FromQuery] string eqpid,
         [FromQuery] DateTime startDate,
@@ -29,30 +29,29 @@ public class LotUniformityController : ControllerBase
             return BadRequest("Invalid parameters.");
         }
 
-        var results = new Dictionary<int, LotUniformitySeriesDto>();
-        var dbInfo = DatabaseInfo.CreateDefault();
-        await using var conn = new NpgsqlConnection(dbInfo.GetConnectionString());
-        await conn.OpenAsync();
-
-        var sqlBuilder = new StringBuilder();
-
-        sqlBuilder.AppendFormat(@"
-            SELECT waferid, point, ""{0}""
+        var sqlBuilder = new StringBuilder($@"
+            SELECT waferid, point, ""{yAxisMetric}"", x, y, dierow, diecol
             FROM public.plg_wf_flat
             WHERE lotid = @lotId
               AND cassettercp = @cassetteRcp
               AND stagegroup = @stageGroup
               AND eqpid = @eqpid
-              AND serv_ts BETWEEN @startDate AND @endDate", yAxisMetric);
+              AND serv_ts BETWEEN @startDate AND @endDate
+              AND point IS NOT NULL
+              AND ""{yAxisMetric}"" IS NOT NULL
+        ");
 
         if (!string.IsNullOrEmpty(film))
         {
             sqlBuilder.Append(" AND film = @film");
         }
 
-        sqlBuilder.AppendFormat(@"
-              AND point IS NOT NULL AND ""{0}"" IS NOT NULL
-            ORDER BY waferid, point;", yAxisMetric);
+        sqlBuilder.Append(" ORDER BY waferid, point;");
+
+        var results = new Dictionary<int, LotUniformitySeriesDto>();
+        var dbInfo = DatabaseInfo.CreateDefault();
+        await using var conn = new NpgsqlConnection(dbInfo.GetConnectionString());
+        await conn.OpenAsync();
 
         await using var cmd = new NpgsqlCommand(sqlBuilder.ToString(), conn);
         cmd.Parameters.AddWithValue("lotId", lotId);
@@ -79,7 +78,11 @@ public class LotUniformityController : ControllerBase
             results[waferId].DataPoints.Add(new LotUniformityDataPointDto
             {
                 Point = reader.GetInt32(1),
-                Value = reader.GetDouble(2)
+                Value = reader.GetDouble(2),
+                X = reader.IsDBNull(3) ? 0 : reader.GetDouble(3),
+                Y = reader.IsDBNull(4) ? 0 : reader.GetDouble(4),
+                DieRow = reader.IsDBNull(5) ? (double?)null : reader.GetDouble(5),
+                DieCol = reader.IsDBNull(6) ? (double?)null : reader.GetDouble(6)
             });
         }
 
