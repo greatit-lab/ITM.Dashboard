@@ -26,7 +26,7 @@ window.AmChartMakers.PerformanceLineChart = {
         }));
 
         const consistentFormat = config.xAxisDateFormat || "yy-MM-dd HH:mm";
-        xAxis.get("dateFormats")["second"] = "HH:mm:ss";
+        xAxis.get("dateFormats")["second"] = "yy-MM-dd HH:mm:ss";
         xAxis.get("dateFormats")["minute"] = consistentFormat;
         xAxis.get("dateFormats")["hour"] = consistentFormat;
         xAxis.get("dateFormats")["day"] = consistentFormat;
