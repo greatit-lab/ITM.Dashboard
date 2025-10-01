@@ -13,27 +13,22 @@
 </MudStack>
 
 <MudPaper Class="pa-4 mb-4">
+    @* 필터 UI는 변경사항 없음 *@
     <MudGrid Spacing="2" Justify="Justify.FlexStart">
         @* --- 1열 --- *@
         <MudItem xs="12" sm="4" md="2">
             <MudSelect T="string" Label="Site" Value="_selectedSite" ValueChanged="OnSiteChanged" Dense="true" Margin="Margin.Dense">
-                @foreach (var site in _sites)
-                {
-                    <MudSelectItem Value="@site">@site</MudSelectItem>
-                }
+                @foreach (var site in _sites) { <MudSelectItem Value="@site">@site</MudSelectItem> }
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="4" md="2">
             <MudSelect T="string" Label="SDWT" Value="_selectedSdwt" ValueChanged="OnSdwtChanged" Disabled="string.IsNullOrEmpty(_selectedSite)" Dense="true" Margin="Margin.Dense">
-                @foreach (var sdwt in _sdwts)
-                {
-                    <MudSelectItem Value="@sdwt">@sdwt</MudSelectItem>
-                }
+                @foreach (var sdwt in _sdwts) { <MudSelectItem Value="@sdwt">@sdwt</MudSelectItem> }
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="4" md="2"><MudAutocomplete T="string" Label="EQP ID" SearchFunc="SearchEqpIds" Value="_selectedEqpId" ValueChanged="OnEqpidChanged" Disabled="string.IsNullOrEmpty(_selectedSdwt)" Dense="true" Margin="Margin.Dense" MaxItems="null" /></MudItem>
-        <MudItem xs="12" sm="6" md="3"><MudDatePicker Label="Start Date" @bind-Date="_startDate" Dense="true" Margin="Margin.Dense" PickerVariant="PickerVariant.Dialog" /></MudItem>
-        <MudItem xs="12" sm="6" md="3"><MudDatePicker Label="End Date" @bind-Date="_endDate" Dense="true" Margin="Margin.Dense" PickerVariant="PickerVariant.Dialog" /></MudItem>
+        <MudItem xs="12" sm="6" md="3"><MudDatePicker Label="Start Date" @bind-Date="_startDate" @bind-Date:after="() => InvokeAsync(OnDateChanged)" Dense="true" Margin="Margin.Dense" PickerVariant="PickerVariant.Dialog" /></MudItem>
+        <MudItem xs="12" sm="6" md="3"><MudDatePicker Label="End Date" @bind-Date="_endDate" @bind-Date:after="() => InvokeAsync(OnDateChanged)" Dense="true" Margin="Margin.Dense" PickerVariant="PickerVariant.Dialog" /></MudItem>
 
         @* --- 2열 --- *@
         <MudItem xs="12" sm="4" md="2"><MudAutocomplete T="string" Label="Lot ID" SearchFunc="SearchLotIds" Value="_selectedLotId" ValueChanged="OnLotIdChanged" Disabled="string.IsNullOrEmpty(_selectedEqpId)" Dense="true" Margin="Margin.Dense" MaxItems="null" /></MudItem>
@@ -42,18 +37,13 @@
         <MudItem xs="12" sm="4" md="2"><MudAutocomplete T="string" Label="Film" SearchFunc="SearchFilms" Value="_selectedFilm" ValueChanged="OnFilmChanged" Disabled="string.IsNullOrEmpty(_selectedStageGroup)" Dense="true" Margin="Margin.Dense" MaxItems="null" /></MudItem>
         <MudItem xs="12" sm="4" md="2">
             <MudSelect T="string" Label="Y-Axis Metric" Value="_selectedMetric" ValueChanged="OnMetricChanged" Dense="true" Margin="Margin.Dense">
-                @foreach (var metric in _availableMetrics)
-                {
-                    <MudSelectItem Value="@metric">@metric.ToUpper()</MudSelectItem>
-                }
+                @foreach (var metric in _availableMetrics) { <MudSelectItem Value="@metric">@metric.ToUpper()</MudSelectItem> }
             </MudSelect>
         </MudItem>
-        @* ✅ [수정] 조회 버튼의 Disabled 조건을 _selectedFilm에서 _selectedStageGroup으로 변경합니다. *@
         <MudItem xs="6" sm="2" md="1"><MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OnSearchClicked" Disabled="string.IsNullOrEmpty(_selectedStageGroup)" FullWidth="true">Search</MudButton></MudItem>
         <MudItem xs="6" sm="2" md="1"><MudButton Variant="Variant.Outlined" OnClick="ResetFilters" FullWidth="true">Reset</MudButton></MudItem>
     </MudGrid>
 </MudPaper>
-
 
 @if (_isLoading)
 {
@@ -61,16 +51,34 @@
 }
 else if (_isSearched)
 {
-    <MudPaper Class="pa-4">
-        @if (_chartData.Any())
-        {
-            <AmChart ChartData="_chartData" ChartConfig="_chartConfig" ChartType="LotUniformityChart" Height="500px" />
-        }
-        else
-        {
-            <div class="d-flex justify-center align-center" style="height:500px;"><MudText>조회된 데이터가 없습니다.</MudText></div>
-        }
-    </MudPaper>
+    @* ▼▼▼ [수정] 차트 영역을 MudGrid로 감싸 2/3, 1/3 비율로 나눕니다. ▼▼▼ *@
+    <MudGrid>
+        <MudItem xs="12" md="8">
+            <MudPaper Class="pa-4" Style="height: 100%;">
+                @if (_lineChartData.Any())
+                {
+                    <AmChart ChartData="_lineChartData" ChartConfig="_lineChartConfig" ChartType="LotUniformityChart" Height="500px" />
+                }
+                else
+                {
+                    <div class="d-flex justify-center align-center" style="height:500px;"><MudText>라인 차트 데이터가 없습니다.</MudText></div>
+                }
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudPaper Class="pa-4" Style="height: 100%;">
+                @if (_mapChartData.Any())
+                {
+                    <AmChart ChartData="_mapChartData" ChartConfig="_mapChartConfig" ChartType="LotUniformityMapChart" Height="500px" />
+                }
+                else
+                {
+                    <div class="d-flex justify-center align-center" style="height:500px;"><MudText>Wafer Map 데이터가 없습니다.</MudText></div>
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+    @* ▲▲▲ [수정] 여기까지 ▲▲▲ *@
 }
 else
 {
@@ -81,23 +89,36 @@ else
     private bool _isLoading = false, _isSearched = false;
     private string _selectedSite, _selectedSdwt, _selectedEqpId, _selectedLotId, _selectedCassetteRcp, _selectedStageGroup, _selectedFilm, _selectedMetric = "t1";
     private DateTime? _startDate = DateTime.Now.Date.AddDays(-6), _endDate = DateTime.Now.Date;
-    // ✅ [수정] _availableMetrics를 빈 리스트로 초기화합니다. 고정 목록은 제거합니다.
     private List<string> _sites = new(), _sdwts = new(), _availableEqpIds = new(), _availableLotIds = new(), _availableCassetteRcps = new(), _availableStageGroups = new(), _availableFilms = new(), _availableMetrics = new();
+    
+    // ▼▼▼ [수정] 차트 데이터를 라인차트와 맵차트용으로 분리합니다. ▼▼▼
+    private List<LotUniformityChartData> _lineChartData = new();
+    private List<LotUniformityChartData> _mapChartData = new();
+    // ▲▲▲ [수정] 여기까지 ▲▲▲
 
-    private List<LotUniformityChartData> _chartData = new();
-    private object _chartConfig;
+    // ▼▼▼ [수정] 차트 설정을 라인차트와 맵차트용으로 분리합니다. ▼▼▼
+    private object _lineChartConfig;
+    private object _mapChartConfig;
+    // ▲▲▲ [수정] 여기까지 ▲▲▲
 
     protected override async Task OnInitializedAsync()
     {
         var client = HttpClientFactory.CreateClient("ITM.Dashboard.Api");
         _sites = await client.GetFromJsonAsync<List<string>>("api/Filters/sites") ?? new();
-    }
 
-    private async Task OnMetricChanged(string newMetric)
+        _mapChartConfig = new { pointColor = "#81C784" };
+    }
+    
+    // ... (OnDateChanged, OnMetricChanged, 필터 변경 이벤트 핸들러들은 그대로 유지) ...
+    private async Task OnDateChanged()
     {
-        _selectedMetric = newMetric;
+        if (!string.IsNullOrEmpty(_selectedEqpId))
+        {
+            await UpdateLotIds();
+            await OnLotIdChanged(null);
+        }
     }
-
+    private async Task OnMetricChanged(string newMetric) => _selectedMetric = newMetric;
     private async Task OnSiteChanged(string value)
     {
         _selectedSite = value;
@@ -166,41 +187,26 @@ else
         _selectedFilm = value;
         await UpdateAvailableMetricsAsync();
     }
-
-    // ✅ [추가] Y-Axis Metric 목록을 동적으로 가져오는 새로운 메서드
     private async Task UpdateAvailableMetricsAsync()
     {
-        // StageGroup까지 선택되지 않았으면 Metric 목록을 비웁니다.
         if (string.IsNullOrEmpty(_selectedStageGroup))
         {
             _availableMetrics.Clear();
-            _selectedMetric = "t1"; // 기본값으로 복원
+            _selectedMetric = "t1";
             return;
         }
-
-        var query = BuildFilterQueryString(); // Film을 포함한 전체 필터 쿼리 사용
+        var query = BuildFilterQueryString();
         var client = HttpClientFactory.CreateClient("ITM.Dashboard.Api");
         _availableMetrics = await client.GetFromJsonAsync<List<string>>($"api/Filters/availablemetrics?{query}") ?? new();
-
-        // 목록 업데이트 후, 기본 선택값(_selectedMetric)을 유효한 값으로 설정
         if (_availableMetrics.Any())
         {
-            if (_availableMetrics.Contains("t1"))
-            {
-                _selectedMetric = "t1";
-            }
-            else
-            {
-                _selectedMetric = _availableMetrics.First();
-            }
+            _selectedMetric = _availableMetrics.Contains("t1") ? "t1" : _availableMetrics.First();
         }
         else
         {
-            // 유효한 Metric이 없으면 선택값을 비웁니다.
             _selectedMetric = null;
         }
     }
-
     private async Task UpdateLotIds()
     {
         var query = $"eqpid={Uri.EscapeDataString(_selectedEqpId)}&startDate={_startDate:yyyy-MM-dd}&endDate={_endDate:yyyy-MM-dd}";
@@ -225,7 +231,6 @@ else
         var client = HttpClientFactory.CreateClient("ITM.Dashboard.Api");
         _availableFilms = await client.GetFromJsonAsync<List<string>>($"api/Filters/films?{query}") ?? new();
     }
-
     private async Task<IEnumerable<string>> SearchEqpIds(string value, CancellationToken token)
     {
         await Task.Yield();
@@ -261,7 +266,8 @@ else
     {
         _isLoading = true;
         _isSearched = false;
-        _chartData.Clear();
+        _lineChartData.Clear();
+        _mapChartData.Clear();
         await InvokeAsync(StateHasChanged);
 
         var client = HttpClientFactory.CreateClient("ITM.Dashboard.Api");
@@ -269,15 +275,61 @@ else
         {
             var query = BuildFilterQueryString(true);
             var seriesData = await client.GetFromJsonAsync<List<LotUniformitySeriesDto>>($"api/LotUniformity/trend?{query}");
-            _chartData = seriesData?.SelectMany(series => series.DataPoints.Select(dp => new LotUniformityChartData
+
+            var allPoints = seriesData?.SelectMany(series => series.DataPoints.Select(dp => new LotUniformityChartData
             {
                 WaferId = series.WaferId,
                 Point = dp.Point,
-                Value = dp.Value
-            })).ToList() ??
-            new List<LotUniformityChartData>();
+                Value = dp.Value,
+                X = dp.X,
+                Y = dp.Y,
+                DieCol = dp.DieCol.HasValue ? dp.DieCol + 0.5 : null,
+                DieRow = dp.DieRow.HasValue ? dp.DieRow + 1 : null
+            })).ToList() ?? new List<LotUniformityChartData>();
 
-            _chartConfig = new { xTitle = "Point #", yTitle = _selectedMetric.ToUpper() };
+            _lineChartData = allPoints;
+
+            if (allPoints.Any())
+            {
+                var uniquePoints = allPoints.GroupBy(p => p.Point).Select(g => g.First()).ToList();
+                bool useDieCoords = uniquePoints.First().DieCol.HasValue;
+
+                if (useDieCoords)
+                {
+                    _mapChartData = uniquePoints.Select(p => {
+                        p.MapX = p.DieCol + 0.5;
+                        p.MapY = p.DieRow + 1;
+                        return p;
+                    }).ToList();
+                }
+                else
+                {
+                    double maxAbsCoord = 0;
+                    foreach (var p in uniquePoints)
+                    {
+                        if (Math.Abs(p.X) > maxAbsCoord) maxAbsCoord = Math.Abs(p.X);
+                        if (Math.Abs(p.Y) > maxAbsCoord) maxAbsCoord = Math.Abs(p.Y);
+                    }
+
+                    if (maxAbsCoord > 0)
+                    {
+                        // ▼▼▼ [수정] 정규화 비율을 6.0에서 5.5로 조정하여 테두리 안쪽에 위치하도록 합니다. ▼▼▼
+                        const double scaleFactor = 5.5; 
+                        _mapChartData = uniquePoints.Select(p => {
+                            p.MapX = (p.X / maxAbsCoord) * scaleFactor;
+                            p.MapY = (p.Y / maxAbsCoord) * scaleFactor;
+                            return p;
+                        }).ToList();
+                        // ▲▲▲ [수정] 여기까지 ▲▲▲
+                    }
+                    else
+                    {
+                         _mapChartData = uniquePoints;
+                    }
+                }
+            }
+            
+            _lineChartConfig = new { xTitle = "Point #", yTitle = _selectedMetric.ToUpper() };
         }
         catch (Exception ex) { Console.WriteLine($"Error loading chart data: {ex.Message}"); }
         finally
@@ -293,7 +345,9 @@ else
         _selectedSite = _selectedSdwt = _selectedEqpId = _selectedLotId = _selectedCassetteRcp = _selectedStageGroup = _selectedFilm = null;
         _startDate = DateTime.Now.Date.AddDays(-6); _endDate = DateTime.Now.Date;
         _sdwts.Clear(); _availableEqpIds.Clear(); _availableLotIds.Clear(); _availableCassetteRcps.Clear(); _availableStageGroups.Clear(); _availableFilms.Clear();
-        _isSearched = false; _chartData.Clear();
+        _isSearched = false; 
+        _lineChartData.Clear();
+        _mapChartData.Clear();
 
         var client = HttpClientFactory.CreateClient("ITM.Dashboard.Api");
         _sites = await client.GetFromJsonAsync<List<string>>("api/Filters/sites") ?? new();
