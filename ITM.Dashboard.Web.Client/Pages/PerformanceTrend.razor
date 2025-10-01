@@ -96,7 +96,7 @@
     <MudGrid Spacing="3">
         @* --- 좌측 열 --- *@
         <MudItem xs="12" md="6">
-            <MudText Typo="Typo.h5" GutterBottom="true" Class="mb-3"><b>▶ CPU</b></MudText>
+            <MudText Typo="Typo.h5" GutterBottom="true" Class="mb-3"><b>▸ CPU</b></MudText>
             <MudStack Spacing="3">
                 @* (좌측 상단) CPU Usage Chart *@
                 <MudPaper Class="pa-4" Style="height:350px; position:relative;">
@@ -140,7 +140,7 @@
 
         @* --- 우측 열 --- *@
         <MudItem xs="12" md="6">
-            <MudText Typo="Typo.h5" GutterBottom="true" Class="mb-3"><b>▶ Memory & GPU</b></MudText>
+            <MudText Typo="Typo.h5" GutterBottom="true" Class="mb-3"><b>▸ Memory & GPU</b></MudText>
             <MudStack Spacing="3">
                 @* (우측 상단) Memory Usage Chart *@
                 <MudPaper Class="pa-4" Style="height:350px; position:relative;">
@@ -291,7 +291,6 @@ else
         _cpuTempFanChartConfig = new
         {
             xField = "timestamp",
-            xAxisDateFormat = "MM-dd HH:mm",
             yAxes = new object[] {
                 new { title = "Temp (°C)" },
                 new { opposite = true, title = "Fan (RPM)" }
