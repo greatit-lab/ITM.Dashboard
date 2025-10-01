@@ -225,7 +225,7 @@ public class FiltersController : ControllerBase
         // 5. 최종 후보 컬럼들에 대해 실제 데이터가 있는지 확인
         foreach (var metric in potentialMetrics)
         {
-            var checkSql = $"SELECT 1 FROM public.plg_wf_flat {whereQuery} AND \"{metric}\" IS NOT NULL LIMIT 1;";
+            var checkSql = $"SELECT 1 FROM public.plg_wf_flat {whereQuery} AND point IS NOT NULL AND \"{metric}\" IS NOT NULL LIMIT 1;";
             await using var checkCmd = new NpgsqlCommand(checkSql, conn);
             foreach (var p in parameters)
             {
