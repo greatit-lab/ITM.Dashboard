@@ -3,14 +3,19 @@ using System.Collections.Generic;
 
 namespace ITM.Dashboard.Api.Models
 {
-    // 각 Wafer의 개별 데이터 포인트를 나타냅니다.
     public class LotUniformityDataPointDto
     {
-        public int Point { get; set; } // X축 (Point #)
-        public double Value { get; set; } // Y축 (선택된 측정 항목의 값)
+        public int Point { get; set; } 
+        public double Value { get; set; }
+        public double X { get; set; }
+        public double Y { get; set; }
+
+        // ▼▼▼ [수정] int?를 double?로 변경합니다. ▼▼▼
+        public double? DieRow { get; set; }
+        public double? DieCol { get; set; }
+        // ▲▲▲ [수정] 여기까지 ▲▲▲
     }
 
-    // 차트의 각 라인(Wafer)을 나타냅니다.
     public class LotUniformitySeriesDto
     {
         public int WaferId { get; set; }
