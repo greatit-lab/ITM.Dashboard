@@ -20,28 +20,19 @@ window.AmChartMakers.PerformanceLineChart = {
         cursor.lineY.set("stroke", cursorColor);
 
         const xAxis = chart.xAxes.push(am5xy.DateAxis.new(root, {
-            baseInterval: { timeUnit: config.xTimeUnit || "minute", count: 1 },
+            baseInterval: { timeUnit: "second", count: 1 },
             renderer: am5xy.AxisRendererX.new(root, { minGridDistance: 120 }),
-            inputDateFormat: "yyyy-MM-ddTHH:mm:ss",
-            // ▼▼▼ [추가] 데이터 그룹화 기능을 활성화하여 포인트 겹침 현상을 방지합니다. ▼▼▼
-            groupData: true,
-            groupIntervals: [
-                { timeUnit: "minute", count: 1 },
-                { timeUnit: "minute", count: 5 },
-                { timeUnit: "minute", count: 10 },
-                { timeUnit: "minute", count: 30 },
-                { timeUnit: "hour", count: 1 },
-                { timeUnit: "hour", count: 6 },
-                { timeUnit: "day", count: 1 }
-            ]
+            inputDateFormat: "yyyy-MM-ddTHH:mm:ss"
         }));
 
         const consistentFormat = config.xAxisDateFormat || "yy-MM-dd HH:mm";
+        xAxis.get("dateFormats")["second"] = "HH:mm:ss";
         xAxis.get("dateFormats")["minute"] = consistentFormat;
         xAxis.get("dateFormats")["hour"] = consistentFormat;
         xAxis.get("dateFormats")["day"] = consistentFormat;
         xAxis.get("dateFormats")["week"] = consistentFormat;
         xAxis.get("dateFormats")["month"] = "yyyy-MM";
+        xAxis.get("periodChangeDateFormats")["second"] = "HH:mm:ss";
         xAxis.get("periodChangeDateFormats")["minute"] = consistentFormat;
         xAxis.get("periodChangeDateFormats")["hour"] = consistentFormat;
         xAxis.get("periodChangeDateFormats")["day"] = consistentFormat;
