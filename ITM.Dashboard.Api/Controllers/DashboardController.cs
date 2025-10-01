@@ -72,6 +72,17 @@ namespace ITM.Dashboard.Api.Controllers
                 summary.TodayErrorCount = Convert.ToInt32(await cmd.ExecuteScalarAsync());
             }
 
+            // ▼▼▼ [추가] 최근 1시간 내 알람 수를 조회하는 로직 ▼▼▼
+            var newAlarmSql = new StringBuilder("SELECT COUNT(*) FROM public.plg_error e JOIN public.ref_equipment r ON e.eqpid = r.eqpid WHERE e.time_stamp >= NOW() - INTERVAL '1 hour'");
+            await using (var cmd = new NpgsqlCommand())
+            {
+                AddFilterLogic(newAlarmSql, cmd, site, sdwt);
+                cmd.Connection = conn;
+                cmd.CommandText = newAlarmSql.ToString();
+                summary.NewAlarmCount = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+            }
+            // ▲▲▲ [추가] 여기까지 ▲▲▲
+
             var todayDataSql = new StringBuilder("SELECT COUNT(*) FROM public.plg_wf_flat w JOIN public.ref_equipment r ON w.eqpid = r.eqpid WHERE w.serv_ts >= CURRENT_DATE");
             await using (var cmd = new NpgsqlCommand())
             {
@@ -91,32 +102,34 @@ namespace ITM.Dashboard.Api.Controllers
             await using var conn = new NpgsqlConnection(GetConnectionString());
             await conn.OpenAsync();
 
-            // ▼▼▼ [수정] 오늘 발생한 에러 건수를 COUNT하는 서브쿼리로 변경 ▼▼▼
+            // ▼▼▼ [수정] ClockDrift 계산을 위해 `datetime`을 `ts`로 변경 ▼▼▼
             var sqlBuilder = new StringBuilder(@"
-        SELECT 
-            a.eqpid, 
-            COALESCE(s.status, 'OFFLINE') = 'ONLINE' AS is_online, 
-            s.last_perf_update AS last_contact,
-            a.pc_name, 
-            COALESCE(p.cpu_usage, 0) AS cpu_usage, 
-            COALESCE(p.mem_usage, 0) AS mem_usage, 
-            a.app_ver,
-            a.type, a.ip_address, a.os, a.system_type, a.locale, a.timezone,
-            COALESCE(e.alarm_count, 0) AS today_alarm_count  -- 에러 건수 (없으면 0)
-        FROM public.agent_info a
-        JOIN public.ref_equipment r ON a.eqpid = r.eqpid
-        LEFT JOIN public.agent_status s ON a.eqpid = s.eqpid
-        LEFT JOIN (
-            SELECT eqpid, cpu_usage, mem_usage, ROW_NUMBER() OVER(PARTITION BY eqpid ORDER BY serv_ts DESC) as rn
-            FROM public.eqp_perf
-        ) p ON a.eqpid = p.eqpid AND p.rn = 1
-        LEFT JOIN (
-            SELECT eqpid, COUNT(*) AS alarm_count 
-            FROM public.plg_error 
-            WHERE time_stamp >= CURRENT_DATE -- 오늘 0시 이후 데이터
-            GROUP BY eqpid
-        ) e ON a.eqpid = e.eqpid
-        WHERE 1=1");
+                SELECT 
+                    a.eqpid, 
+                    COALESCE(s.status, 'OFFLINE') = 'ONLINE' AS is_online, 
+                    s.last_perf_update AS last_contact,
+                    a.pc_name, 
+                    COALESCE(p.cpu_usage, 0) AS cpu_usage, 
+                    COALESCE(p.mem_usage, 0) AS mem_usage, 
+                    a.app_ver,
+                    a.type, a.ip_address, a.os, a.system_type, a.locale, a.timezone,
+                    COALESCE(e.alarm_count, 0) AS today_alarm_count,
+                    p.serv_ts AS last_perf_serv_ts, -- ClockDrift 계산용
+                    p.ts AS last_perf_eqp_ts         -- ClockDrift 계산용 (datetime -> ts)
+                FROM public.agent_info a
+                JOIN public.ref_equipment r ON a.eqpid = r.eqpid
+                LEFT JOIN public.agent_status s ON a.eqpid = s.eqpid
+                LEFT JOIN (
+                    SELECT eqpid, cpu_usage, mem_usage, serv_ts, ts, ROW_NUMBER() OVER(PARTITION BY eqpid ORDER BY serv_ts DESC) as rn
+                    FROM public.eqp_perf
+                ) p ON a.eqpid = p.eqpid AND p.rn = 1
+                LEFT JOIN (
+                    SELECT eqpid, COUNT(*) AS alarm_count 
+                    FROM public.plg_error 
+                    WHERE time_stamp >= CURRENT_DATE
+                    GROUP BY eqpid
+                ) e ON a.eqpid = e.eqpid
+                WHERE 1=1");
 
             await using var cmd = new NpgsqlCommand();
             AddFilterLogic(sqlBuilder, cmd, site, sdwt);
@@ -128,6 +141,15 @@ namespace ITM.Dashboard.Api.Controllers
             await using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
+                // ▼▼▼ [수정] ClockDrift 계산 로직 (ts 컬럼 기준) ▼▼▼
+                double? clockDrift = null;
+                if (!reader.IsDBNull(14) && !reader.IsDBNull(15))
+                {
+                    var servTs = reader.GetDateTime(14);
+                    var eqpTime = reader.GetDateTime(15); // datetime -> ts
+                    clockDrift = (servTs - eqpTime).TotalSeconds;
+                }
+
                 results.Add(new AgentStatusDto
                 {
                     EqpId = reader.GetString(0),
@@ -143,8 +165,8 @@ namespace ITM.Dashboard.Api.Controllers
                     SystemType = reader.IsDBNull(10) ? string.Empty : reader.GetString(10),
                     Locale = reader.IsDBNull(11) ? string.Empty : reader.GetString(11),
                     Timezone = reader.IsDBNull(12) ? string.Empty : reader.GetString(12),
-                    // ▼▼▼ [수정] 조회된 알람 건수 값을 DTO에 할당 ▼▼▼
-                    TodayAlarmCount = Convert.ToInt32(reader.GetInt64(13))
+                    TodayAlarmCount = Convert.ToInt32(reader.GetInt64(13)),
+                    ClockDrift = clockDrift
                 });
             }
             return Ok(results);
@@ -162,7 +184,6 @@ namespace ITM.Dashboard.Api.Controllers
             await using var conn = new NpgsqlConnection(GetConnectionString());
             await conn.OpenAsync();
 
-            // [핵심 수정] 5분 단위로 데이터를 그룹화하고 평균을 계산하는 쿼리
             var sql = @"
                 SELECT 
                     (timestamp 'epoch' + (floor(extract(epoch from serv_ts) / 300) * 300) * interval '1 second') as five_minute_interval,
