@@ -13,13 +13,16 @@ window.AmChartMakers.ErrorTrendColumnChart = {
             layout: root.verticalLayout
         }));
 
+        chart.bulletsContainer.set("mask", undefined);
+
         const isDarkMode = document.body.querySelector('.dark-theme-main-content') !== null;
         const textColor = isDarkMode ? am5.color(0xffffff) : am5.color(0x000000);
 
         const xAxis = chart.xAxes.push(am5xy.DateAxis.new(root, {
             baseInterval: { timeUnit: config.xTimeUnit, count: 1 },
             renderer: am5xy.AxisRendererX.new(root, { minGridDistance: 60 }),
-            dateFormats: { "day": config.xAxisDateFormat }
+            dateFormats: { "day": config.xAxisDateFormat },
+            periodChangeDateFormats: { "day": config.xAxisDateFormat, "month": config.xAxisDateFormat }
         }));
         xAxis.get("renderer").labels.template.setAll({ fill: textColor, rotation: -45, centerY: am5.p50, centerX: am5.p100, paddingRight: 10 });
 
@@ -27,6 +30,9 @@ window.AmChartMakers.ErrorTrendColumnChart = {
             renderer: am5xy.AxisRendererY.new(root, {}),
             min: 0
         }));
+
+        yAxis.set("extraMax", 0.1);
+
         yAxis.get("renderer").labels.template.set("fill", textColor);
 
         config.series.forEach(seriesConfig => {
