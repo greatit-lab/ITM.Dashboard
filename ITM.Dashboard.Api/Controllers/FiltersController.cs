@@ -32,7 +32,8 @@ public class FiltersController : ControllerBase
             "public.plg_wf_flat",
             "public.eqp_perf",
             "public.plg_error",
-            "public.plg_prealign"
+            "public.plg_prealign",
+            "public.eqp_lamp_life"
         };
         if (!allowedTables.Contains(sourceTable))
         {
@@ -328,4 +329,10 @@ public class FiltersController : ControllerBase
     [HttpGet("waferids")]
     public Task<ActionResult<IEnumerable<string>>> GetWaferIds([FromQuery] string eqpid, [FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate, [FromQuery] string? lotId, [FromQuery] int? waferId, [FromQuery] string? cassetteRcp, [FromQuery] string? stageRcp, [FromQuery] string? stageGroup, [FromQuery] string? film)
         => GetFilteredDistinctValues("waferid", eqpid, startDate, endDate, lotId, waferId, cassetteRcp, stageRcp, stageGroup, film);
+
+    [HttpGet("eqpids/lamplife/{sdwt}")]
+    public Task<ActionResult<IEnumerable<string>>> GetLampLifeEqpIds(string sdwt) => GetEqpIdsBySource("public.eqp_lamp_life", sdwt, null);
+
+    [HttpGet("eqpidsbysite/lamplife/{site}")]
+    public Task<ActionResult<IEnumerable<string>>> GetLampLifeEqpIdsBySite(string site) => GetEqpIdsBySource("public.eqp_lamp_life", null, site);
 }
