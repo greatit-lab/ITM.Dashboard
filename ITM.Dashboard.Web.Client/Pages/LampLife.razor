@@ -6,9 +6,9 @@
 
 <PageTitle>Lamp Lifetime</PageTitle>
 
-<MudStack Row="true" AlignItems="AlignItems="Center" Class="mb-2">
+<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
     <MudIcon Icon="@Icons.Material.Rounded.Highlight" Size="Size.Large" />
-    <MudText Typo="Typo.h4">Lamp Lifetime</MudText>
+    <MudText Typo="Typo.h4">Lamp LifeTime</MudText>
 </MudStack>
 
 <MudPaper Class="pa-4 mb-4">
@@ -30,7 +30,7 @@
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="4" md="3">
-            <MudAutocomplete T="string" Label="EQP ID (All)" @bind-Value="_selectedEqpId" SearchFunc="SearchEqpIds"
+            <MudAutocomplete T="string" Label="EQP ID (All)" @bind-Value="_selectedEqpId" SearchFunc="SearchEqpids"
                              ResetValueOnEmptyText="true" CoerceText="false" Dense="true" Margin="Margin.Dense"
                              Disabled="@(string.IsNullOrEmpty(_selectedSite))" Clearable="true" />
         </MudItem>
@@ -60,8 +60,8 @@ else if (_isSearched)
             <TemplateColumn Title="Used Life">
                 <CellTemplate>
                     <MudProgressLinear Color="@GetProgressColor(context.Item.UsedLifePercentage)" Value="context.Item.UsedLifePercentage" Class="my-1">
-                        @* ▼▼▼ [핵심 수정] 다크 모드 여부에 따라 글자색을 동적으로 변경합니다. ▼▼▼ *@
-                        <MudText Style="@($"color: {(_isDarkMode ? "white" : "black")}; font-weight: 500; font-size: 0.8rem;")">
+                        @* ▼▼▼ [수정] 다크 모드 여부에 따라 글자색을 동적으로 변경합니다. ▼▼▼ *@
+                        <MudText Style="@($"color: {(_isDarkMode ? "white" : "black")}; font-size: 0.8rem;")">
                             @($"{context.Item.UsedLifePercentage:F1}%")
                         </MudText>
                     </MudProgressLinear>
@@ -82,7 +82,6 @@ else
 
 
 @code {
-    // ▼▼▼ [핵심 수정] 현재 테마 모드를 감지하기 위한 CascadingParameter를 추가합니다. ▼▼▼
     [CascadingParameter(Name = "IsDarkMode")]
     private bool _isDarkMode { get; set; }
 
@@ -111,7 +110,7 @@ else
         _selectedSdwt = null;
         _selectedEqpId = null;
         _sdwts.Clear();
-        
+
         if (!string.IsNullOrEmpty(_selectedSite))
         {
             var client = HttpClientFactory.CreateClient("ITM.Dashboard.Api");
@@ -126,25 +125,25 @@ else
         _selectedEqpId = null;
         await UpdateEqpIdList();
     }
-    
+
     private async Task UpdateEqpIdList()
     {
         _availableEqpIds.Clear();
-        if (string.IsNullOrEmpty(_selectedSite)) 
+        if (string.IsNullOrEmpty(_selectedSite))
         {
             await InvokeAsync(StateHasChanged);
             return;
         }
-        
+
         var client = HttpClientFactory.CreateClient("ITM.Dashboard.Api");
         var url = string.IsNullOrEmpty(_selectedSdwt)
             ? $"api/Filters/eqpidsbysite/lamplife/{_selectedSite}"
             : $"api/Filters/eqpids/lamplife/{_selectedSdwt}";
-        
+
         _availableEqpIds = await client.GetFromJsonAsync<List<string>>(url) ?? new();
         await InvokeAsync(StateHasChanged);
     }
-    
+
     private async Task<IEnumerable<string>> SearchEqpids(string value, CancellationToken token)
     {
         await Task.Yield();
@@ -192,12 +191,12 @@ else
         _selectedEqpId = null;
         _sdwts.Clear();
         _availableEqpIds.Clear();
-        
+
         _isSearched = false;
         _lampData.Clear();
         await InvokeAsync(StateHasChanged);
     }
-    
+
     private Color GetProgressColor(double value)
     {
         if (value > 80) return Color.Error;
