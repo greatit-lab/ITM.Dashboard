@@ -9,14 +9,18 @@
 </div>
 <MudNavMenu>
     <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Rounded.Home">Home Dashboard</MudNavLink>
-    <MudNavLink Href="equipment-explorer" Icon="@Icons.Material.Rounded.Computer">ITM Equip Specs</MudNavLink>
 
     <MudNavGroup Title="Wafer Metrology" Icon="@Icons.Material.Rounded.SquareFoot" Expanded="true">
         <MudNavLink Href="waferflatdata" Icon="@Icons.Material.Rounded.DataObject">Wafer Flat Data</MudNavLink>
         <MudNavLink Href="lot-uniformity-trend" Icon="@Icons.Material.Rounded.StackedLineChart">Lot Uniformity</MudNavLink>
     </MudNavGroup>
 
+    <MudNavGroup Title="Equipment Monitoring" Icon="@Icons.Material.Rounded.Dns" Expanded="true">
+        <MudNavLink Href="equipment-explorer" Icon="@Icons.Material.Rounded.Computer">Equipment Specs</MudNavLink>
+        <MudNavLink Href="lamp-life" Icon="@Icons.Material.Rounded.Highlight">Lamp Lifetime</MudNavLink>
+        <MudNavLink Href="performance-trend" Icon="@Icons.Material.Rounded.Insights">Performance</MudNavLink>
+    </MudNavGroup>
+
     <MudNavLink Href="prealign-analytics" Icon="@Icons.Material.Rounded.GpsFixed">PreAlign Data</MudNavLink>
     <MudNavLink Href="error-analytics" Icon="@Icons.Material.Rounded.Warning">Alert History</MudNavLink>
-    <MudNavLink Href="performance-trend" Icon="@Icons.Material.Rounded.Insights">Performance</MudNavLink>
 </MudNavMenu>
