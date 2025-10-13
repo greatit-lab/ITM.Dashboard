@@ -1,0 +1,207 @@
+@* ITM.Dashboard.Web.Client/Pages/LampLife.razor *@
+
+@page "/lamp-life"
+@using ITM.Dashboard.Web.Client.Models
+@inject IHttpClientFactory HttpClientFactory
+
+<PageTitle>Lamp Lifetime</PageTitle>
+
+<MudStack Row="true" AlignItems="AlignItems="Center" Class="mb-2">
+    <MudIcon Icon="@Icons.Material.Rounded.Highlight" Size="Size.Large" />
+    <MudText Typo="Typo.h4">Lamp Lifetime</MudText>
+</MudStack>
+
+<MudPaper Class="pa-4 mb-4">
+    <MudGrid Spacing="2" AlignItems="AlignItems.Center">
+        <MudItem xs="12" sm="4" md="2">
+            <MudSelect T="string" Label="Site" Value="_selectedSite" ValueChanged="OnSiteChanged" Dense="true" Margin="Margin.Dense" Required="true">
+                @foreach (var site in _sites)
+                {
+                    <MudSelectItem T="string" Value="@site">@site</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="4" md="2">
+            <MudSelect T="string" Label="SDWT (All)" Value="_selectedSdwt" ValueChanged="OnSdwtChanged" Disabled="@(string.IsNullOrEmpty(_selectedSite))" Dense="true" Margin="Margin.Dense" Clearable="true">
+                @foreach (var sdwt in _sdwts)
+                {
+                    <MudSelectItem T="string" Value="@sdwt">@sdwt</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="4" md="3">
+            <MudAutocomplete T="string" Label="EQP ID (All)" @bind-Value="_selectedEqpId" SearchFunc="SearchEqpIds"
+                             ResetValueOnEmptyText="true" CoerceText="false" Dense="true" Margin="Margin.Dense"
+                             Disabled="@(string.IsNullOrEmpty(_selectedSite))" Clearable="true" />
+        </MudItem>
+        <MudItem xs="6" sm="6" md="2">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OnSearchClicked" Disabled="@(string.IsNullOrEmpty(_selectedSite))" FullWidth="true">SEARCH</MudButton>
+        </MudItem>
+        <MudItem xs="6" sm="6" md="2">
+            <MudButton Variant="Variant.Outlined" OnClick="ResetFilters" FullWidth="true">Reset</MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@if (_isLoading)
+{
+    <div class="d-flex justify-center mt-16">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    </div>
+}
+else if (_isSearched)
+{
+    <MudDataGrid T="LampLifeDto" Items="@_lampData" Hover="true" Striped="true" Dense="true">
+        <Columns>
+            <PropertyColumn Property="x => x.EqpId" Title="EQP ID" />
+            <PropertyColumn Property="x => x.LampId" Title="Lamp ID" />
+            <PropertyColumn Property="x => x.AgeHour" Title="Age (hours)" />
+            <PropertyColumn Property="x => x.LifespanHour" Title="Lifespan (hours)" />
+            <TemplateColumn Title="Used Life">
+                <CellTemplate>
+                    <MudProgressLinear Color="@GetProgressColor(context.Item.UsedLifePercentage)" Value="context.Item.UsedLifePercentage" Class="my-1">
+                        @* ▼▼▼ [핵심 수정] 다크 모드 여부에 따라 글자색을 동적으로 변경합니다. ▼▼▼ *@
+                        <MudText Style="@($"color: {(_isDarkMode ? "white" : "black")}; font-weight: 500; font-size: 0.8rem;")">
+                            @($"{context.Item.UsedLifePercentage:F1}%")
+                        </MudText>
+                    </MudProgressLinear>
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.LastChanged" Title="Lamp Changed At" Format="yy-MM-dd HH:mm:ss" />
+            <PropertyColumn Property="x => x.Ts" Title="Data Collected At" Format="yy-MM-dd HH:mm:ss" />
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="LampLifeDto" />
+        </PagerContent>
+    </MudDataGrid>
+}
+else
+{
+    <MudAlert Severity="Severity.Info">조회할 Site를 선택 후, Search 버튼을 클릭하세요.</MudAlert>
+}
+
+
+@code {
+    // ▼▼▼ [핵심 수정] 현재 테마 모드를 감지하기 위한 CascadingParameter를 추가합니다. ▼▼▼
+    [CascadingParameter(Name = "IsDarkMode")]
+    private bool _isDarkMode { get; set; }
+
+    private bool _isLoading = false;
+    private bool _isSearched = false;
+
+    private string? _selectedSite;
+    private string? _selectedSdwt;
+    private string? _selectedEqpId;
+
+    private List<string> _sites = new();
+    private List<string> _sdwts = new();
+    private List<string> _availableEqpIds = new();
+
+    private List<LampLifeDto> _lampData = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var client = HttpClientFactory.CreateClient("ITM.Dashboard.Api");
+        _sites = await client.GetFromJsonAsync<List<string>>("api/Filters/sites") ?? new();
+    }
+
+    private async Task OnSiteChanged(string newSite)
+    {
+        _selectedSite = newSite;
+        _selectedSdwt = null;
+        _selectedEqpId = null;
+        _sdwts.Clear();
+        
+        if (!string.IsNullOrEmpty(_selectedSite))
+        {
+            var client = HttpClientFactory.CreateClient("ITM.Dashboard.Api");
+            _sdwts = await client.GetFromJsonAsync<List<string>>($"api/Filters/sdwts/{_selectedSite}") ?? new();
+        }
+        await UpdateEqpIdList();
+    }
+
+    private async Task OnSdwtChanged(string newSdwt)
+    {
+        _selectedSdwt = newSdwt;
+        _selectedEqpId = null;
+        await UpdateEqpIdList();
+    }
+    
+    private async Task UpdateEqpIdList()
+    {
+        _availableEqpIds.Clear();
+        if (string.IsNullOrEmpty(_selectedSite)) 
+        {
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+        
+        var client = HttpClientFactory.CreateClient("ITM.Dashboard.Api");
+        var url = string.IsNullOrEmpty(_selectedSdwt)
+            ? $"api/Filters/eqpidsbysite/lamplife/{_selectedSite}"
+            : $"api/Filters/eqpids/lamplife/{_selectedSdwt}";
+        
+        _availableEqpIds = await client.GetFromJsonAsync<List<string>>(url) ?? new();
+        await InvokeAsync(StateHasChanged);
+    }
+    
+    private async Task<IEnumerable<string>> SearchEqpids(string value, CancellationToken token)
+    {
+        await Task.Yield();
+        if (string.IsNullOrEmpty(value))
+            return _availableEqpIds;
+        return _availableEqpIds.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+
+    private async Task OnSearchClicked()
+    {
+        if (string.IsNullOrEmpty(_selectedSite)) return;
+
+        _isLoading = true;
+        _isSearched = false;
+        _lampData.Clear();
+        await InvokeAsync(StateHasChanged);
+
+        var client = HttpClientFactory.CreateClient("ITM.Dashboard.Api");
+        try
+        {
+            var query = new List<string> { $"site={Uri.EscapeDataString(_selectedSite)}" };
+            if (!string.IsNullOrEmpty(_selectedSdwt)) query.Add($"sdwt={Uri.EscapeDataString(_selectedSdwt)}");
+            if (!string.IsNullOrEmpty(_selectedEqpId)) query.Add($"eqpid={Uri.EscapeDataString(_selectedEqpId)}");
+            var queryString = string.Join("&", query);
+
+            _lampData = await client.GetFromJsonAsync<List<LampLifeDto>>($"api/LampLife?{queryString}") ?? new();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading Lamp Life data: {ex.Message}");
+            _lampData.Clear();
+        }
+        finally
+        {
+            _isSearched = true;
+            _isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task ResetFilters()
+    {
+        _selectedSite = null;
+        _selectedSdwt = null;
+        _selectedEqpId = null;
+        _sdwts.Clear();
+        _availableEqpIds.Clear();
+        
+        _isSearched = false;
+        _lampData.Clear();
+        await InvokeAsync(StateHasChanged);
+    }
+    
+    private Color GetProgressColor(double value)
+    {
+        if (value > 80) return Color.Error;
+        if (value > 50) return Color.Warning;
+        return Color.Success;
+    }
+}
