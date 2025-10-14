@@ -1,5 +1,4 @@
 @* // ITM.Dashboard.Web.Client/Pages/PerformanceTrend.razor *@
-
 @page "/performance-trend"
 @using ITM.Dashboard.Web.Client.Models
 @using ITM.Dashboard.Web.Client.Shared
@@ -45,7 +44,6 @@
                              Disabled="@(_filterState < FilterState.SelectEqpId || _filterState == FilterState.RealTime)" />
         </MudItem>
 
-        @* ▼▼▼ [수정] DateRangePicker를 Start/End Date, Start/End Time 필드로 분리합니다. ▼▼▼ *@
         <MudItem xs="6" sm="3" md="1">
             <MudDatePicker Label="Start Date" @bind-Date="_startDate" Dense="true" Margin="Margin.Dense"
                            Disabled="@(_filterState < FilterState.ReadyToSearch || _filterState == FilterState.RealTime)" />
@@ -62,8 +60,6 @@
             <MudTimePicker Label="End Time" @bind-Time="_endTime" TimeEditMode="TimeEditMode.OnlyHours" AmPm="false" Dense="true" Margin="Margin.Dense"
                            Disabled="@(_filterState < FilterState.ReadyToSearch || _filterState == FilterState.RealTime)" />
         </MudItem>
-        @* ▲▲▲ [수정] 여기까지 ▲▲▲ *@
-
 
         <MudItem xs="4" sm="3" md="1">
             <MudButton Variant="Variant.Filled" Color="Color.Primary"
@@ -99,7 +95,7 @@
             <MudText Typo="Typo.h5" GutterBottom="true" Class="mb-3"><b>▸ CPU</b></MudText>
             <MudStack Spacing="3">
                 @* (좌측 상단) CPU Usage Chart *@
-                <MudPaper Class="pa-4" Style="height:350px; position:relative;">
+                <MudPaper Class="pa-4" Style="height:315px; position:relative;">
                     <MudText Typo="Typo.h6" GutterBottom="true">@_selectedEqpId CPU Usage Trend</MudText>
                     @if (_isLoading)
                     {
@@ -109,16 +105,16 @@
                     }
                     else if (_chartData.Any())
                     {
-                        <AmChart ChartData="_chartData" ChartConfig="_cpuUsageChartConfig" Height="300px" ChartType="PerformanceLineChart" />
+                        <AmChart ChartData="_chartData" ChartConfig="_cpuUsageChartConfig" Height="270px" ChartType="PerformanceLineChart" />
                     }
                     else
                     {
-                        <div class="d-flex justify-center align-center" style="height:300px;"><MudText>데이터가 없습니다.</MudText></div>
+                        <div class="d-flex justify-center align-center" style="height:2700px;"><MudText>데이터가 없습니다.</MudText></div>
                     }
                 </MudPaper>
 
                 @* (좌측 하단) CPU Temp & Fan Speed Chart *@
-                <MudPaper Class="pa-4" Style="height:350px; position:relative;">
+                <MudPaper Class="pa-4" Style="height:315px; position:relative;">
                     <MudText Typo="Typo.h6" GutterBottom="true">@_selectedEqpId CPU Temp & Fan Speed</MudText>
                     @if (_isLoading)
                     {
@@ -128,11 +124,11 @@
                     }
                     else if (_chartData.Any())
                     {
-                        <AmChart ChartData="_chartData" ChartConfig="_cpuTempFanChartConfig" Height="300px" ChartType="PerformanceLineChart" />
+                        <AmChart ChartData="_chartData" ChartConfig="_cpuTempFanChartConfig" Height="270px" ChartType="PerformanceLineChart" />
                     }
                     else
                     {
-                        <div class="d-flex justify-center align-center" style="height:300px;"><MudText>데이터가 없습니다.</MudText></div>
+                        <div class="d-flex justify-center align-center" style="height:270px;"><MudText>데이터가 없습니다.</MudText></div>
                     }
                 </MudPaper>
             </MudStack>
@@ -143,7 +139,7 @@
             <MudText Typo="Typo.h5" GutterBottom="true" Class="mb-3"><b>▸ Memory & GPU</b></MudText>
             <MudStack Spacing="3">
                 @* (우측 상단) Memory Usage Chart *@
-                <MudPaper Class="pa-4" Style="height:350px; position:relative;">
+                <MudPaper Class="pa-4" Style="height:315px; position:relative;">
                     <MudText Typo="Typo.h6" GutterBottom="true">@_selectedEqpId Memory Usage Trend</MudText>
                     @if (_isLoading)
                     {
@@ -153,16 +149,16 @@
                     }
                     else if (_chartData.Any())
                     {
-                        <AmChart ChartData="_chartData" ChartConfig="_memoryUsageChartConfig" Height="300px" ChartType="PerformanceLineChart" />
+                        <AmChart ChartData="_chartData" ChartConfig="_memoryUsageChartConfig" Height="270px" ChartType="PerformanceLineChart" />
                     }
                     else
                     {
-                        <div class="d-flex justify-center align-center" style="height:300px;"><MudText>데이터가 없습니다.</MudText></div>
+                        <div class="d-flex justify-center align-center" style="height:270px;"><MudText>데이터가 없습니다.</MudText></div>
                     }
                 </MudPaper>
 
                 @* (우측 하단) GPU Temp Chart *@
-                <MudPaper Class="pa-4" Style="height:350px; position:relative;">
+                <MudPaper Class="pa-4" Style="height:315px; position:relative;">
                     <MudText Typo="Typo.h6" GutterBottom="true">@_selectedEqpId GPU Temp Trend</MudText>
                     @if (_isLoading)
                     {
@@ -172,11 +168,11 @@
                     }
                     else if (_chartData.Any())
                     {
-                        <AmChart ChartData="_chartData" ChartConfig="_gpuTempChartConfig" Height="300px" ChartType="PerformanceLineChart" />
+                        <AmChart ChartData="_chartData" ChartConfig="_gpuTempChartConfig" Height="270px" ChartType="PerformanceLineChart" />
                     }
                     else
                     {
-                        <div class="d-flex justify-center align-center" style="height:300px;"><MudText>데이터가 없습니다.</MudText></div>
+                        <div class="d-flex justify-center align-center" style="height:270px;"><MudText>데이터가 없습니다.</MudText></div>
                     }
                 </MudPaper>
             </MudStack>
@@ -251,12 +247,10 @@ else
     private string? _selectedSdwt;
     private string? _selectedEqpId;
 
-    // ▼▼▼ [수정] DateRangePicker 대신 개별 DateTime?과 TimeSpan?을 사용합니다. ▼▼▼
     private DateTime? _startDate = DateTime.Now.Date.AddDays(-1);
     private DateTime? _endDate = DateTime.Now.Date;
     private TimeSpan? _startTime = new TimeSpan(0, 0, 0);
-    private TimeSpan? _endTime = new TimeSpan(23, 0, 0); // 분 단위를 0으로 설정
-    // ▲▲▲ [수정] 여기까지 ▲▲▲
+    private TimeSpan? _endTime = new TimeSpan(23, 0, 0);
 
     private List<string> _sites = new();
     private List<string> _sdwts = new();
@@ -270,10 +264,8 @@ else
     private object _memoryUsageChartConfig;
     private object _gpuTempChartConfig;
 
-    // ▼▼▼ [수정] 조합된 날짜/시간을 계산하는 속성을 새로운 변수에 맞게 수정합니다. ▼▼▼
     private DateTime EffectiveStartDate => _startDate.GetValueOrDefault(DateTime.Now.Date).Date + _startTime.GetValueOrDefault(TimeSpan.Zero);
     private DateTime EffectiveEndDate => _endDate.GetValueOrDefault(DateTime.Now.Date).Date + _endTime.GetValueOrDefault(new TimeSpan(23, 0, 0));
-    // ▲▲▲ [수정] 여기까지 ▲▲▲
 
     protected override async Task OnInitializedAsync()
     {
@@ -294,7 +286,7 @@ else
             yAxes = new object[] {
                 new { title = "Temp (°C)" },
                 new { opposite = true, title = "Fan (RPM)" }
-             },
+            },
             series = new object[] {
                 new { name = "CPU Temp", valueField = "cpuTemp", yAxisIndex = 0, color = "#ffc400", bulletRadius = 2, tooltipText = "{valueX.formatDate('HH:mm:ss')}:[/] [bold]{name}: {valueY.formatNumber('#.0')}°C" },
                 new { name = "Fan Speed", valueField = "fanSpeed", yAxisIndex = 1, color = "#9e9e9e", bulletRadius = 2, tooltipText = "{valueX.formatDate('HH:mm:ss')}:[/] [bold]{name}: {valueY.formatNumber('#')} RPM" }
@@ -400,12 +392,11 @@ else
     private async Task ResetFilters()
     {
         _selectedSite = _selectedSdwt = _selectedEqpId = null;
-        // ▼▼▼ [수정] 날짜/시간 필터 초기화 로직 변경 ▼▼▼
+
         _startDate = DateTime.Now.Date.AddDays(-1);
         _endDate = DateTime.Now.Date;
         _startTime = new TimeSpan(0, 0, 0);
         _endTime = new TimeSpan(23, 0, 0);
-        // ▲▲▲ [수정] 여기까지 ▲▲▲
 
         _sdwts.Clear();
         _availableEqpIds.Clear();
