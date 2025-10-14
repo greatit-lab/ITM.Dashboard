@@ -5,6 +5,7 @@ using Npgsql;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace ITM.Dashboard.Api.Controllers
 {
@@ -83,6 +84,54 @@ namespace ITM.Dashboard.Api.Controllers
                     CpuTemp = reader.GetDouble(4),
                     GpuTemp = reader.GetDouble(5),
                     FanSpeed = reader.GetDouble(6)
+                });
+            }
+            return Ok(results);
+        }
+
+        // ▼▼▼ [수정] 조회 기간에 따라 집계 단위를 자동으로 계산하도록 변경 ▼▼▼
+        [HttpGet("process-history")]
+        public async Task<ActionResult<IEnumerable<ProcessPerformanceDataDto>>> GetProcessPerformanceHistory(
+            [FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] string eqpid)
+        {
+            // 조회 기간(일)에 따라 집계 간격(초)을 동적으로 결정
+            var dateDiffDays = (endDate - startDate).TotalDays;
+            int intervalSeconds;
+            if (dateDiffDays <= 1) intervalSeconds = 15;       // 1일 이하: 15초
+            else if (dateDiffDays <= 3) intervalSeconds = 60;      // 3일 이하: 1분
+            else if (dateDiffDays <= 7) intervalSeconds = 300;     // 7일 이하: 5분
+            else intervalSeconds = 600;    // 7일 초과: 10분
+
+            var results = new List<ProcessPerformanceDataDto>();
+            await using var conn = new NpgsqlConnection(GetConnectionString());
+            await conn.OpenAsync();
+
+            var sql = $@"
+                SELECT
+                    (timestamp 'epoch' + (floor(extract(epoch from serv_ts) / {intervalSeconds}) * {intervalSeconds}) * interval '1 second') as interval_time,
+                    process_name,
+                    AVG(memory_usage_mb) as avg_mem_mb
+                FROM public.eqp_proc_perf
+                WHERE eqpid = @eqpid
+                  AND serv_ts >= @startDate
+                  AND serv_ts <= @endDate
+                GROUP BY interval_time, process_name
+                ORDER BY interval_time, avg_mem_mb DESC;
+            ";
+
+            await using var cmd = new NpgsqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("eqpid", eqpid);
+            cmd.Parameters.AddWithValue("startDate", startDate.ToUniversalTime());
+            cmd.Parameters.AddWithValue("endDate", endDate.ToUniversalTime());
+
+            await using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                results.Add(new ProcessPerformanceDataDto
+                {
+                    Timestamp = reader.GetDateTime(0),
+                    ProcessName = reader.GetString(1),
+                    MemoryUsageMB = (int)reader.GetDouble(2)
                 });
             }
             return Ok(results);
