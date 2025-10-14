@@ -1,9 +1,9 @@
-// ITM.Dashboard.Web.Client/Models/ProcessPerformanceDataDto.cs
+// ITM.Dashboard.Web.Client/Models/ProcessMemoryDataDto.cs
 using System;
 
 namespace ITM.Dashboard.Web.Client.Models
 {
-    public class ProcessPerformanceDataDto
+    public class ProcessMemoryDataDto
     {
         public DateTime Timestamp { get; set; }
         public string ProcessName { get; set; }
