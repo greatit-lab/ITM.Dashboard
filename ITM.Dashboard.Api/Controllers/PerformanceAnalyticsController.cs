@@ -91,7 +91,7 @@ namespace ITM.Dashboard.Api.Controllers
 
         // ▼▼▼ [수정] 조회 기간에 따라 집계 단위를 자동으로 계산하도록 변경 ▼▼▼
         [HttpGet("process-history")]
-        public async Task<ActionResult<IEnumerable<ProcessPerformanceDataDto>>> GetProcessPerformanceHistory(
+        public async Task<ActionResult<IEnumerable<ProcessMemoryDataDto>>> GetProcessPerformanceHistory(
             [FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] string eqpid)
         {
             // 조회 기간(일)에 따라 집계 간격(초)을 동적으로 결정
@@ -102,7 +102,7 @@ namespace ITM.Dashboard.Api.Controllers
             else if (dateDiffDays <= 7) intervalSeconds = 300;     // 7일 이하: 5분
             else intervalSeconds = 600;    // 7일 초과: 10분
 
-            var results = new List<ProcessPerformanceDataDto>();
+            var results = new List<ProcessMemoryDataDto>();
             await using var conn = new NpgsqlConnection(GetConnectionString());
             await conn.OpenAsync();
 
@@ -127,7 +127,7 @@ namespace ITM.Dashboard.Api.Controllers
             await using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
-                results.Add(new ProcessPerformanceDataDto
+                results.Add(new ProcessMemoryDataDto
                 {
                     Timestamp = reader.GetDateTime(0),
                     ProcessName = reader.GetString(1),
