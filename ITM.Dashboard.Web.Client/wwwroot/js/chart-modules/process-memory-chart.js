@@ -47,7 +47,7 @@ window.AmChartMakers.ProcessMemoryChart = {
 
         // 유니크 프로세스별로 Series 생성
         const uniqueProcesses = [...new Set(data.map(item => item.processName))];
-        
+
         // ▼▼▼ [핵심 수정 2/3] forEach 루프에 index 파라미터를 추가합니다. ▼▼▼
         uniqueProcesses.forEach((procName, index) => {
             const series = chart.series.push(am5xy.LineSeries.new(root, {
@@ -97,7 +97,7 @@ window.AmChartMakers.ProcessMemoryChart = {
         }));
         cursor.lineY.set("visible", false);
         cursor.lineX.set("visible", true); // 세로선 표시
-        
+
         // 범례
         const legend = chart.rightAxesContainer.children.push(am5.Legend.new(root, {
             width: 200,
