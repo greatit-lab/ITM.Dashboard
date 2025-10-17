@@ -11,7 +11,7 @@ window.AmChartMakers.ProcessMemoryChart = {
             wheelY: "zoomX",
             pinchZoomX: true,
             // 툴팁이 여러 개 동시에 표시될 수 있도록 설정
-            maxTooltipDistance: 0
+            maxTooltipDistance: -1
         }));
 
         // 다크모드 여부에 따라 텍스트 색 설정
@@ -27,7 +27,7 @@ window.AmChartMakers.ProcessMemoryChart = {
                 // ▼▼▼ [핵심 수정 1/2] 라벨 간 최소 간격을 설정하여 겹침을 방지합니다. (단위: 픽셀) ▼▼▼
                 minGridDistance: 120
             }),
-            tooltip: am5.Tooltip.new(root, {})
+            /*tooltip: am5.Tooltip.new(root, {})*/
         }));
         // ▼▼▼ [핵심 수정 2/2] X축 라벨의 날짜/시간 형식을 지정합니다. ▼▼▼
         const consistentFormat = "MM-dd HH:mm";
@@ -76,7 +76,7 @@ window.AmChartMakers.ProcessMemoryChart = {
                 legendValueText: "{valueY} MB", // 범례 값 포맷
                 tooltip: am5.Tooltip.new(root, {
                     pointerOrientation: "horizontal",
-                    labelText: "[bold]{name}:[/] {valueY} MB"
+                    labelText: "[bold]{name}:[/] {valueY} MB\n{valueX.formatDate('MM-dd HH:mm:ss')}"
                 })
             }));
 
@@ -90,7 +90,7 @@ window.AmChartMakers.ProcessMemoryChart = {
             series.bullets.push(function() {
                 return am5.Bullet.new(root, {
                     sprite: am5.Circle.new(root, {
-                        radius: 1.5,
+                        radius: 1.8,
                         fill: series.get("stroke"),
                         stroke: series.get("stroke"),
                         strokeWidth: 1
@@ -110,7 +110,7 @@ window.AmChartMakers.ProcessMemoryChart = {
 
         // 커서 생성 (세로선만 보이도록 설정)
         const cursor = chart.set("cursor", am5xy.XYCursor.new(root, {
-            behavior: "none" // 마우스 움직임을 그대로 따라오도록 설정
+            behavior: "snapX" // 마우스 움직임을 그대로 따라오도록 설정
         }));
         cursor.lineY.set("visible", false);
         cursor.lineX.set("visible", true); // 세로선 표시
