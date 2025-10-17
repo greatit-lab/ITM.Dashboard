@@ -24,13 +24,13 @@ namespace ITM.Dashboard.Api.Controllers
             await conn.OpenAsync();
 
             var sqlBuilder = new StringBuilder(@"
-                SELECT T1.eqpid, T1.lamp_id, T1.age_hour, T1.lifespan_hour, T1.last_changed, T1.ts
+                SELECT T1.eqpid, T1.lamp_id, T1.age_hour, T1.lifespan_hour, T1.last_changed, T1.serv_ts
                 FROM public.eqp_lamp_life AS T1
                 INNER JOIN (
-                    SELECT eqpid, lamp_id, MAX(ts) as max_ts
+                    SELECT eqpid, lamp_id, MAX(serv_ts) as max_serv_ts
                     FROM public.eqp_lamp_life
                     GROUP BY eqpid, lamp_id
-                ) AS T2 ON T1.eqpid = T2.eqpid AND T1.lamp_id = T2.lamp_id AND T1.ts = T2.max_ts
+                ) AS T2 ON T1.eqpid = T2.eqpid AND T1.lamp_id = T2.lamp_id AND T1.serv_ts = T2.max_serv_ts
                 INNER JOIN public.ref_equipment AS T3 ON T1.eqpid = T3.eqpid
                 INNER JOIN public.ref_sdwt AS T4 ON T3.sdwt = T4.sdwt
                 WHERE T4.is_use = 'Y'");
