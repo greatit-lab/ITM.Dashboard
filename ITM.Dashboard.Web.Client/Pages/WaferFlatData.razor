@@ -322,22 +322,23 @@
                         {
                             <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
                         }
-                        @* ▼▼▼ [수정] PDF 존재 여부에 따라 UI를 다르게 표시하도록 로직을 변경합니다. ▼▼▼ *@
-                        else if (_pdfExistsForSelectedRow == false)
+                        // ▼▼▼ [핵심 수정] "이미지 없음" 조건을 통합하고 세분화합니다. ▼▼▼
+                        else if (_pdfExistsForSelectedRow == false || (_selectedPointDataRowIndex != -1 && string.IsNullOrEmpty(_pdfImageUrl)))
                         {
-                            @* PDF가 없는 경우 *@
+                            // 조건 1: 애초에 PDF 파일이 없거나
+                            // 조건 2: 포인트를 클릭했지만 (index != -1), 이미지를 불러오지 못한 경우
                             <img src="/images/no-image-available.png" style="max-width: 50%; max-height: 50%; object-fit: contain; opacity: 0.5;" />
                         }
                         else if (_pdfExistsForSelectedRow == true && !string.IsNullOrEmpty(_pdfImageUrl))
                         {
-                            @* PDF가 있고, 포인트 데이터 행을 클릭한 경우 *@
+                            // PDF 파일도 있고, 이미지도 성공적으로 불러온 경우
                             <img src="@_pdfImageUrl" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 50%;" />
                             <div class="crosshair-line crosshair-h"></div>
                             <div class="crosshair-line crosshair-v"></div>
                         }
                         else
                         {
-                            @* PDF가 있지만, 아직 포인트 데이터 행을 클릭하지 않은 경우 *@
+                            // PDF 파일은 있지만, 아직 아무 포인트도 선택하지 않은 초기 상태
                             <MudText>Wafer Point Data에서 Point를 선택하세요.</MudText>
                         }
                     </MudPaper>
@@ -745,8 +746,13 @@ else
     private async Task<IEnumerable<string>> SearchEqpids(string value, CancellationToken token)
     {
         await Task.Yield();
-        if (string.IsNullOrEmpty(value)) return _eqpids ?? Enumerable.Empty<string>();
-        return _eqpids?.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase)) ?? Enumerable.Empty<string>();
+        // ▼▼▼ [핵심 수정] 검색어가 비어있거나, 현재 선택된 EQP ID와 같을 경우 전체 목록을 반환합니다. ▼▼▼
+        if (string.IsNullOrEmpty(value) || value == _selectedEqpid)
+        {
+            return _eqpids;
+        }
+        // 사용자가 새로운 검색어를 입력하는 경우에만 목록을 필터링합니다.
+        return _eqpids.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
     }
 
     private async Task<IEnumerable<string>> SearchLotIds(string value, CancellationToken token)
