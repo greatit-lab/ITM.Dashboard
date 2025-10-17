@@ -45,7 +45,7 @@ else
         @* --- 1. 시스템 현황 요약 카드 (필터링 기능 추가) --- *@
         <MudItem xs="12" sm="6" md="3">
             <MudPaper @onclick='() => SetActiveFilter("All")'
-                      Class="@GetCardClass("All")" Style="height:160px; cursor:pointer;">
+                      Class="@GetCardClass("All")" Style="height:112px; cursor:pointer;">
                 <MudIcon Icon="@Icons.Material.Rounded.Devices" Color="Color.Primary" Style="font-size: 48px;" />
                 <MudText Typo="Typo.h6" Class="mt-2">@_summary?.TotalEqpCount</MudText>
                 <MudText Typo="Typo.body2" Class="mud-text-secondary">Total Monitoring Agent</MudText>
@@ -53,7 +53,7 @@ else
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <MudPaper @onclick='() => SetActiveFilter("Online")'
-                      Class="@GetCardClass("Online")" Style="height:160px; cursor:pointer;">
+                      Class="@GetCardClass("Online")" Style="height:112px; cursor:pointer;">
                 <MudIcon Icon="@Icons.Material.Rounded.Wifi" Color="Color.Success" Style="font-size: 48px;" />
                 <MudText Typo="Typo.h6" Class="mt-2">@_summary?.OnlineAgentCount</MudText>
                 <MudText Typo="Typo.body2" Class="mud-text-secondary">Online Agent</MudText>
@@ -61,7 +61,7 @@ else
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <MudPaper @onclick='() => SetActiveFilter("Offline")'
-                      Class="@GetCardClass("Offline")" Style="height:160px; cursor:pointer;">
+                      Class="@GetCardClass("Offline")" Style="height:112px; cursor:pointer;">
                 <MudIcon Icon="@Icons.Material.Rounded.WifiOff" Color="@((_summary?.TotalEqpCount - _summary?.OnlineAgentCount) > 0 ? Color.Error : Color.Default)" Style="font-size: 48px;" />
                 <MudText Typo="Typo.h6" Color="@((_summary?.TotalEqpCount - _summary?.OnlineAgentCount) > 0 ? Color.Error : Color.Default)" Class="mt-2">@(_summary?.TotalEqpCount - _summary?.OnlineAgentCount)</MudText>
                 <MudText Typo="Typo.body2" Class="mud-text-secondary">Offline Agent</MudText>
@@ -69,7 +69,7 @@ else
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <MudPaper @onclick='() => SetActiveFilter("Alarm")'
-                      Class="@GetCardClass("Alarm")" Style="height:160px; cursor:pointer;">
+                      Class="@GetCardClass("Alarm")" Style="height:112px; cursor:pointer;">
                 <MudIcon Icon="@Icons.Material.Rounded.ErrorOutline" Color="Color.Warning" Style="font-size: 48px;" />
                 <MudStack Spacing="0" AlignItems="AlignItems.Center">
                     <MudText Typo="Typo.h6" Class="mt-2">@_summary?.TodayErrorCount</MudText>
@@ -115,7 +115,11 @@ else
                         }
                     </MudTd>
                     <MudTd DataLabel="Agent Status">
-                        @if (context.TodayAlarmCount > 0)
+                        @if (!context.IsOnline)
+                        {
+                            <MudChip T="object" Icon="@Icons.Material.Filled.HelpOutline" Color="Color.Default" Size="Size.Small" Variant="Variant.Outlined">Unknown</MudChip>
+                        }
+                        else if (context.TodayAlarmCount > 0)
                         {
                             <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
                                 <MudChip T="object" Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Small" Variant="Variant.Outlined">Alert</MudChip>
@@ -171,7 +175,6 @@ else
     private string? _selectedSdwt;
 
     private string _activeFilter = "All";
-
     private IEnumerable<AgentStatusDto> FilteredAgentStatusList => _activeFilter switch
     {
         "Online" => _agentStatusList.Where(a => a.IsOnline),
@@ -238,7 +241,7 @@ else
             var statusTask = client.GetFromJsonAsync<List<AgentStatusDto>>($"api/dashboard/agentstatus?{queryString}");
             await Task.WhenAll(summaryTask, statusTask);
             _summary = await summaryTask;
-            _agentStatusList = await statusTask ?? new();
+            _agentStatusList = (await statusTask ?? new()).OrderBy(s => s.EqpId).ToList();
         }
         catch (Exception ex)
         {
@@ -278,6 +281,7 @@ else
         {
             case "Korea Standard Time": return "KST";
             case "China Standard Time": return "CST";
+            case "Pacific Standard Time": return "PST";
             case "Singapore Standard Time": return "SGT";
             default: return timezone;
         }
@@ -290,7 +294,6 @@ else
 
         var sign = seconds.Value > 0 ? "+" : "-";
         var timeSpan = TimeSpan.FromSeconds(Math.Abs(seconds.Value));
-
         var parts = new List<string>();
         if (timeSpan.Hours > 0) parts.Add($"{timeSpan.Hours}h");
         if (timeSpan.Minutes > 0) parts.Add($"{timeSpan.Minutes}m");
@@ -303,14 +306,17 @@ else
     private Color GetClockDriftColor(double? seconds)
     {
         if (!seconds.HasValue) return Color.Default;
-
         var drift = seconds.Value;
         var absDrift = Math.Abs(drift);
 
-        if (absDrift > 60) return Color.Error;   // 1분 이상 차이나면 에러 (빨강)
-        if (drift > 0.1) return Color.Warning; // 0.1초보다 느리면 경고 (주황)
-        if (drift < -0.1) return Color.Info;    // 0.1초보다 빠르면 정보 (파랑)
+        if (absDrift > 60) return Color.Error;
+        // 1분 이상 차이나면 에러 (빨강)
+        if (drift > 0.1) return Color.Warning;
+        // 0.1초보다 느리면 경고 (주황)
+        if (drift < -0.1) return Color.Info;
+        // 0.1초보다 빠르면 정보 (파랑)
 
-        return Color.Success; // 거의 정확하면 성공 (초록)
+        return Color.Success;
+        // 거의 정확하면 성공 (초록)
     }
 }
