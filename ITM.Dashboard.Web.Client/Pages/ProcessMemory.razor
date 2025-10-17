@@ -90,7 +90,7 @@ else
     private List<string> _sdwts = new();
     private List<string> _availableEqpIds = new();
 
-    private List<ProcessPerformanceDataDto> _processChartData = new();
+    private List<ProcessMemoryDataDto> _processChartData = new();
     private object _processMemoryChartConfig = new { };
 
     protected override async Task OnInitializedAsync()
@@ -165,7 +165,7 @@ else
             query.Append($"&endDate={Uri.EscapeDataString(_endDate.Value.AddDays(1).AddTicks(-1).ToString("o"))}");
             query.Append($"&eqpid={Uri.EscapeDataString(_selectedEqpId)}");
 
-            var data = await client.GetFromJsonAsync<List<ProcessPerformanceDataDto>>($"api/PerformanceAnalytics/process-history?{query}");
+            var data = await client.GetFromJsonAsync<List<ProcessMemory DataDto>>($"api/PerformanceAnalytics/process-history?{query}");
 
             if (data != null && data.Any())
             {
