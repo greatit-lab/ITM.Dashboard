@@ -97,10 +97,10 @@ namespace ITM.Dashboard.Api.Controllers
             // 조회 기간(일)에 따라 집계 간격(초)을 동적으로 결정
             var dateDiffDays = (endDate - startDate).TotalDays;
             int intervalSeconds;
-            if (dateDiffDays <= 1) intervalSeconds = 15;       // 1일 이하: 15초
-            else if (dateDiffDays <= 3) intervalSeconds = 60;      // 3일 이하: 1분
-            else if (dateDiffDays <= 7) intervalSeconds = 300;     // 7일 이하: 5분
-            else intervalSeconds = 600;    // 7일 초과: 10분
+            if (dateDiffDays <= 1) intervalSeconds = 60;       // 1일 이하: 60초
+            else if (dateDiffDays <= 3) intervalSeconds = 300;
+            else if (dateDiffDays <= 7) intervalSeconds = 600;
+            else intervalSeconds = 1800;
 
             var results = new List<ProcessMemoryDataDto>();
             await using var conn = new NpgsqlConnection(GetConnectionString());
