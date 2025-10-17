@@ -11,7 +11,7 @@ window.AmChartMakers.ProcessMemoryChart = {
             wheelY: "zoomX",
             pinchZoomX: true,
             // 툴팁이 여러 개 동시에 표시될 수 있도록 설정
-            maxTooltipDistance: -1
+            maxTooltipDistance: 0
         }));
 
         // 다크모드 여부에 따라 텍스트 색 설정
@@ -23,10 +23,27 @@ window.AmChartMakers.ProcessMemoryChart = {
             maxDeviation: 0.2,
             baseInterval: { timeUnit: "second", count: 1 },
             renderer: am5xy.AxisRendererX.new(root, {
-                minorGridEnabled: true
+                minorGridEnabled: true,
+                // ▼▼▼ [핵심 수정 1/2] 라벨 간 최소 간격을 설정하여 겹침을 방지합니다. (단위: 픽셀) ▼▼▼
+                minGridDistance: 120
             }),
             tooltip: am5.Tooltip.new(root, {})
         }));
+        // ▼▼▼ [핵심 수정 2/2] X축 라벨의 날짜/시간 형식을 지정합니다. ▼▼▼
+        const consistentFormat = "MM-dd HH:mm";
+        xAxis.get("dateFormats")["second"] = "HH:mm:ss";
+        xAxis.get("dateFormats")["minute"] = consistentFormat;
+        xAxis.get("dateFormats")["hour"] = consistentFormat;
+        xAxis.get("dateFormats")["day"] = consistentFormat;
+        xAxis.get("dateFormats")["week"] = consistentFormat;
+        xAxis.get("dateFormats")["month"] = "yyyy-MM";
+        xAxis.get("periodChangeDateFormats")["second"] = "HH:mm:ss";
+        xAxis.get("periodChangeDateFormats")["minute"] = consistentFormat;
+        xAxis.get("periodChangeDateFormats")["hour"] = consistentFormat;
+        xAxis.get("periodChangeDateFormats")["day"] = consistentFormat;
+        xAxis.get("periodChangeDateFormats")["week"] = consistentFormat;
+        xAxis.get("periodChangeDateFormats")["month"] = "yyyy-MM";
+
         xAxis.get("renderer").labels.template.setAll({ fill: textColor, rotation: -45 });
 
         // Y축 설정
@@ -73,9 +90,9 @@ window.AmChartMakers.ProcessMemoryChart = {
             series.bullets.push(function() {
                 return am5.Bullet.new(root, {
                     sprite: am5.Circle.new(root, {
-                        radius: 3,
+                        radius: 1.5,
                         fill: series.get("stroke"),
-                        stroke: root.interfaceColors.get("background"),
+                        stroke: series.get("stroke"),
                         strokeWidth: 1
                     })
                 });
