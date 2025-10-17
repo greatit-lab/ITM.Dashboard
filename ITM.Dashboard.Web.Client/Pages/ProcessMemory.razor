@@ -59,7 +59,7 @@
 else if (_isSearched)
 {
     <MudPaper Class="pa-4">
-        <MudText Typo="Typo.h6" GutterBottom="true">Process Memory Usage (Top 5 by Peak)</MudText>
+        <MudText Typo="Typo.h6" GutterBottom="true">@_selectedEqpId Process Memory Trend (Recent Top 5 & Peak Top 5)</MudText>
         @if (_processChartData.Any())
         {
             <AmChart ChartData="_processChartData" ChartConfig="_processMemoryChartConfig" ChartType="ProcessMemoryChart" Height="500px" />
@@ -89,10 +89,8 @@ else
     private List<string> _sites = new();
     private List<string> _sdwts = new();
     private List<string> _availableEqpIds = new();
-
     private List<ProcessMemoryDataDto> _processChartData = new();
     private object _processMemoryChartConfig = new { };
-
     protected override async Task OnInitializedAsync()
     {
         var client = HttpClientFactory.CreateClient("ITM.Dashboard.Api");
@@ -126,14 +124,16 @@ else
         var client = HttpClientFactory.CreateClient("ITM.Dashboard.Api");
         if (level == "site")
         {
-            _sdwts = await client.GetFromJsonAsync<List<string>>($"api/Filters/sdwts/{_selectedSite}") ?? new();
+            _sdwts = await client.GetFromJsonAsync<List<string>>($"api/Filters/sdwts/{_selectedSite}") ??
+            new();
         }
 
         // EQP ID 목록 조회 URL은 eqp_perf 테이블을 사용하는 API로 지정합니다.
         // eqp_proc_perf 데이터가 있는 장비는 eqp_perf 데이터도 있을 가능성이 높기 때문입니다.
         if (!string.IsNullOrEmpty(_selectedSdwt))
         {
-            _availableEqpIds = await client.GetFromJsonAsync<List<string>>($"api/Filters/eqpids/performance/{_selectedSdwt}") ?? new();
+            _availableEqpIds = await client.GetFromJsonAsync<List<string>>($"api/Filters/eqpids/performance/{_selectedSdwt}") ??
+            new();
         }
 
         StateHasChanged();
@@ -169,16 +169,27 @@ else
 
             if (data != null && data.Any())
             {
-                // 메모리 사용량이 높은 상위 5개 프로세스만 필터링
-                var top5ProcessNames = data
+                // 1. 기간 내 최고 사용량 기준 Top 5 프로세스 선정
+                var top5ByPeak = data
                     .GroupBy(d => d.ProcessName)
                     .Select(g => new { ProcessName = g.Key, MaxMem = g.Max(d => d.MemoryUsageMB) })
                     .OrderByDescending(x => x.MaxMem)
                     .Take(5)
-                    .Select(x => x.ProcessName)
-                    .ToHashSet();
+                    .Select(x => x.ProcessName);
 
-                _processChartData = data.Where(d => top5ProcessNames.Contains(d.ProcessName)).ToList();
+                // 2. 가장 최근 시점 기준 Top 5 프로세스 선정
+                var latestTimestamp = data.Max(d => d.Timestamp);
+                var top5ByLatest = data
+                    .Where(d => d.Timestamp == latestTimestamp)
+                    .OrderByDescending(d => d.MemoryUsageMB)
+                    .Take(5)
+                    .Select(d => d.ProcessName);
+
+                // 3. 두 목록을 합쳐서 차트에 표시할 최종 프로세스 목록 생성
+                var processNamesToShow = top5ByPeak.Union(top5ByLatest).ToHashSet();
+
+                // 4. 최종 목록에 포함된 프로세스의 데이터만 필터링
+                _processChartData = data.Where(d => processNamesToShow.Contains(d.ProcessName)).ToList();
             }
         }
         catch (Exception ex)
