@@ -291,7 +291,7 @@ else
     {
         if (!seconds.HasValue) return "N/A";
         // 0.1초 미만 차이는 '정상'으로 간주
-        if (Math.Abs(seconds.Value) < 0.1) return "✔︎"; 
+        if (Math.Abs(seconds.Value) < 0.1) return "✔︎";
 
         // ▼▼▼ [수정] 부호 로직 반전 ▼▼▼
         // seconds.Value (servTs - eqpTime)가 양수(+)면 Agent가 느린 것(-)
@@ -312,7 +312,7 @@ else
     private Color GetClockDriftColor(double? seconds)
     {
         if (!seconds.HasValue) return Color.Default;
-        
+
         var absDrift = Math.Abs(seconds.Value); // 절댓값(시간 차이 크기)
 
         if (absDrift > 1800) // 30분(1800초) 초과
