@@ -96,7 +96,7 @@
             <MudStack Spacing="3">
                 @* (좌측 상단) CPU Usage Chart *@
                 <MudPaper Class="pa-4" Style="height:315px; position:relative;">
-                    <MudText Typo="Typo.h6" GutterBottom="true">@_selectedEqpId CPU Usage Trend</MudText>
+                    <MudText Typo="Typo.h6" GutterBottom="true">@_searchedEqpId CPU Usage Trend</MudText>
                     @if (_isLoading)
                     {
                         <div class="d-flex justify-center align-center" style="height:calc(100% - 40px);">
@@ -115,7 +115,7 @@
 
                 @* (좌측 하단) CPU Temp & Fan Speed Chart *@
                 <MudPaper Class="pa-4" Style="height:315px; position:relative;">
-                    <MudText Typo="Typo.h6" GutterBottom="true">@_selectedEqpId CPU Temp & Fan Speed</MudText>
+                    <MudText Typo="Typo.h6" GutterBottom="true">@_searchedEqpId CPU Temp & Fan Speed</MudText>
                     @if (_isLoading)
                     {
                         <div class="d-flex justify-center align-center" style="height:calc(100% - 40px);">
@@ -140,7 +140,7 @@
             <MudStack Spacing="3">
                 @* (우측 상단) Memory Usage Chart *@
                 <MudPaper Class="pa-4" Style="height:315px; position:relative;">
-                    <MudText Typo="Typo.h6" GutterBottom="true">@_selectedEqpId Memory Usage Trend</MudText>
+                    <MudText Typo="Typo.h6" GutterBottom="true">@_searchedEqpId Memory Usage Trend</MudText>
                     @if (_isLoading)
                     {
                         <div class="d-flex justify-center align-center" style="height:calc(100% - 40px);">
@@ -159,7 +159,7 @@
 
                 @* (우측 하단) GPU Temp Chart *@
                 <MudPaper Class="pa-4" Style="height:315px; position:relative;">
-                    <MudText Typo="Typo.h6" GutterBottom="true">@_selectedEqpId GPU Temp Trend</MudText>
+                    <MudText Typo="Typo.h6" GutterBottom="true">@_searchedEqpId GPU Temp Trend</MudText>
                     @if (_isLoading)
                     {
                         <div class="d-flex justify-center align-center" style="height:calc(100% - 40px);">
@@ -246,6 +246,7 @@ else
     private string? _selectedSite;
     private string? _selectedSdwt;
     private string? _selectedEqpId;
+    private string? _searchedEqpId; // [추가] 검색 완료된 EQP ID 저장용
 
     private DateTime? _startDate = DateTime.Now.Date.AddDays(-1);
     private DateTime? _endDate = DateTime.Now.Date;
@@ -343,11 +344,20 @@ else
         }
         else
         {
+            // ▼▼▼ [수정] ▼▼▼
+            // 1. EQPID 필터를 비활성화 상태(SelectSdwt)로 먼저 설정
+            _filterState = FilterState.SelectSdwt;
+            StateHasChanged(); // UI 즉시 갱신 (필터 비활성화)
+
+            // 2. EQPID 목록을 비동기 로드
             var client = HttpClientFactory.CreateClient("ITM.Dashboard.Api");
-            _availableEqpIds = await client.GetFromJsonAsync<List<string>>($"api/Filters/eqpids/performance/{sdwt}") ?? new();
+            _availableEqpIds = await client.GetFromJsonAsync<List<string>>($"api/Filters/eqpids/performance/{_selectedSdwt}") ?? new();
+
+            // 3. EQPID 목록 로드 완료 후, 필터를 활성화(SelectEqpId)
             _filterState = FilterState.SelectEqpId;
+            // ▲▲▲ [수정] ▲▲▲
         }
-        StateHasChanged();
+        StateHasChanged(); // UI 갱신 (필터 활성화)
     }
 
     private Task OnSelectedEqpIdChanged(string eqpid)
@@ -363,6 +373,7 @@ else
         if (string.IsNullOrEmpty(_selectedEqpId)) return;
         _isLoading = true;
         _isSearched = true;
+        _searchedEqpId = _selectedEqpId; // [추가] 검색 버튼 클릭 시 EQP ID 확정
         ClearResults();
         StateHasChanged();
         await Task.Delay(1);
@@ -392,6 +403,7 @@ else
     private async Task ResetFilters()
     {
         _selectedSite = _selectedSdwt = _selectedEqpId = null;
+        _searchedEqpId = null; // [추가] 리셋 시 검색된 EQP ID도 초기화
 
         _startDate = DateTime.Now.Date.AddDays(-1);
         _endDate = DateTime.Now.Date;
