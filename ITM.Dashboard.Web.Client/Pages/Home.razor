@@ -96,7 +96,7 @@ else
                     <MudTh>Operating System(OS)</MudTh>
                     <MudTh Style="width: 150px;">CPU / Memory</MudTh>
                     <MudTh>
-                        <MudTooltip Text="+: Agent Slow, -: Agent Fast" Arrow="true" Placement="Placement.Top">
+                        <MudTooltip Text="+: Agent Fast, -: Agent Slow" Arrow="true" Placement="Placement.Top">
                             Time Difference
                         </MudTooltip>
                     </MudTh>
@@ -290,9 +290,15 @@ else
     private string FormatTimeDifference(double? seconds)
     {
         if (!seconds.HasValue) return "N/A";
-        if (Math.Abs(seconds.Value) < 0.1) return "✔︎";
+        // 0.1초 미만 차이는 '정상'으로 간주
+        if (Math.Abs(seconds.Value) < 0.1) return "✔︎"; 
 
-        var sign = seconds.Value > 0 ? "+" : "-";
+        // ▼▼▼ [수정] 부호 로직 반전 ▼▼▼
+        // seconds.Value (servTs - eqpTime)가 양수(+)면 Agent가 느린 것(-)
+        // seconds.Value가 음수(-)면 Agent가 빠른 것(+)
+        var sign = seconds.Value > 0 ? "-" : "+";
+        // ▲▲▲ [수정] 완료 ▲▲▲
+
         var timeSpan = TimeSpan.FromSeconds(Math.Abs(seconds.Value));
         var parts = new List<string>();
         if (timeSpan.Hours > 0) parts.Add($"{timeSpan.Hours}h");
@@ -302,21 +308,23 @@ else
         return $"{sign} {string.Join(" ", parts)}";
     }
 
-    // ▼▼▼ [핵심 수정] 빠름/느림 상태에 따라 다른 색상을 반환하도록 로직 변경 ▼▼▼
+    // ▼▼▼ [수정] 새로운 색상 임계값(10분, 30분) 적용 ▼▼▼
     private Color GetClockDriftColor(double? seconds)
     {
         if (!seconds.HasValue) return Color.Default;
-        var drift = seconds.Value;
-        var absDrift = Math.Abs(drift);
+        
+        var absDrift = Math.Abs(seconds.Value); // 절댓값(시간 차이 크기)
 
-        if (absDrift > 60) return Color.Error;
-        // 1분 이상 차이나면 에러 (빨강)
-        if (drift > 0.1) return Color.Warning;
-        // 0.1초보다 느리면 경고 (주황)
-        if (drift < -0.1) return Color.Info;
-        // 0.1초보다 빠르면 정보 (파랑)
+        if (absDrift > 1800) // 30분(1800초) 초과
+        {
+            return Color.Error; // 빨간색
+        }
+        if (absDrift > 600) // 10분(600초) 초과 (30분 이하)
+        {
+            return Color.Warning; // 주황색
+        }
 
-        return Color.Success;
-        // 거의 정확하면 성공 (초록)
+        // 10분 이내 (0.1초 미만의 "✔︎" 포함)
+        return Color.Default; // 색상 없음 (기본 텍스트 색상)
     }
 }
