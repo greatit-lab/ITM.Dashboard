@@ -42,50 +42,61 @@
 else
 {
     <MudGrid Spacing="4">
-        @* --- 1. 시스템 현황 요약 카드 (필터링 기능 추가) --- *@
+        @* --- 1. 시스템 현황 요약 카드 --- *@
         <MudItem xs="12" sm="6" md="3">
             <MudPaper @onclick='() => SetActiveFilter("All")'
-                      Class="@GetCardClass("All")" Style="height:112px; cursor:pointer;">
-                <MudIcon Icon="@Icons.Material.Rounded.Devices" Color="Color.Primary" Style="font-size: 48px;" />
-                <MudText Typo="Typo.h6" Class="mt-2">@_summary?.TotalEqpCount</MudText>
-                <MudText Typo="Typo.body2" Class="mud-text-secondary">Total Monitoring Agent</MudText>
+                      Class="@GetCardClass("All")" Style="cursor:pointer;">
+                @* ▼▼▼ [수정] AlignItems.Start -> AlignItems.Center ▼▼▼ *@
+                <MudStack Spacing="0" AlignItems="AlignItems.Center">
+                    <MudIcon Icon="@Icons.Material.Rounded.Devices" Color="Color.Primary" Style="font-size: 48px;" />
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">Total Monitoring Agent</MudText>
+                </MudStack>
+                <MudText Typo="Typo.h4" Class="ml-2">@_summary?.TotalEqpCount</MudText>
             </MudPaper>
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <MudPaper @onclick='() => SetActiveFilter("Online")'
-                      Class="@GetCardClass("Online")" Style="height:112px; cursor:pointer;">
-                <MudIcon Icon="@Icons.Material.Rounded.Wifi" Color="Color.Success" Style="font-size: 48px;" />
-                <MudText Typo="Typo.h6" Class="mt-2">@_summary?.OnlineAgentCount</MudText>
-                <MudText Typo="Typo.body2" Class="mud-text-secondary">Online Agent</MudText>
+                      Class="@GetCardClass("Online")" Style="cursor:pointer;">
+                @* ▼▼▼ [수정] AlignItems.Start -> AlignItems.Center ▼▼▼ *@
+                <MudStack Spacing="0" AlignItems="AlignItems.Center">
+                    <MudIcon Icon="@Icons.Material.Rounded.Wifi" Color="Color.Success" Style="font-size: 48px;" />
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">Online Agent</MudText>
+                </MudStack>
+                <MudText Typo="Typo.h4" Class="ml-2">@_summary?.OnlineAgentCount</MudText>
             </MudPaper>
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <MudPaper @onclick='() => SetActiveFilter("Offline")'
-                      Class="@GetCardClass("Offline")" Style="height:112px; cursor:pointer;">
-                <MudIcon Icon="@Icons.Material.Rounded.WifiOff" Color="@((_summary?.TotalEqpCount - _summary?.OnlineAgentCount) > 0 ? Color.Error : Color.Default)" Style="font-size: 48px;" />
-                <MudText Typo="Typo.h6" Color="@((_summary?.TotalEqpCount - _summary?.OnlineAgentCount) > 0 ? Color.Error : Color.Default)" Class="mt-2">@(_summary?.TotalEqpCount - _summary?.OnlineAgentCount)</MudText>
-                <MudText Typo="Typo.body2" Class="mud-text-secondary">Offline Agent</MudText>
+                      Class="@GetCardClass("Offline")" Style="cursor:pointer;">
+                @* ▼▼▼ [수정] AlignItems.Start -> AlignItems.Center ▼▼▼ *@
+                <MudStack Spacing="0" AlignItems="AlignItems.Center">
+                    <MudIcon Icon="@Icons.Material.Rounded.WifiOff" Color="@((_summary?.TotalEqpCount - _summary?.OnlineAgentCount) > 0 ? Color.Error : Color.Default)" Style="font-size: 48px;" />
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">Offline Agent</MudText>
+                </MudStack>
+                <MudText Typo="Typo.h4" Color="@((_summary?.TotalEqpCount - _summary?.OnlineAgentCount) > 0 ? Color.Error : Color.Default)" Class="ml-2">@(_summary?.TotalEqpCount - _summary?.OnlineAgentCount)</MudText>
             </MudPaper>
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <MudPaper @onclick='() => SetActiveFilter("Alarm")'
-                      Class="@GetCardClass("Alarm")" Style="height:112px; cursor:pointer;">
-                <MudIcon Icon="@Icons.Material.Rounded.ErrorOutline" Color="Color.Warning" Style="font-size: 48px;" />
+                      Class="@GetCardClass("Alarm")" Style="cursor:pointer;">
+                @* ▼▼▼ [수정] AlignItems.Start -> AlignItems.Center ▼▼▼ *@
                 <MudStack Spacing="0" AlignItems="AlignItems.Center">
-                    <MudText Typo="Typo.h6" Class="mt-2">@_summary?.TodayErrorCount</MudText>
+                    <MudIcon Icon="@Icons.Material.Rounded.ErrorOutline" Color="Color.Warning" Style="font-size: 48px;" />
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">Today's Alerts</MudText>
+                </MudStack>
+                <MudStack Spacing="0" AlignItems="AlignItems.End">
+                    <MudText Typo="Typo.h4" Class="ml-2">@_summary?.TodayErrorCount</MudText>
                     @if (_summary?.NewAlarmCount > 0)
                     {
                         <MudText Typo="Typo.body2" Color="Color.Warning">(New: @_summary.NewAlarmCount)</MudText>
                     }
                 </MudStack>
-                <MudText Typo="Typo.body2" Class="mud-text-secondary">Today's Alerts</MudText>
             </MudPaper>
         </MudItem>
 
         @* --- 2. 에이전트 상태 모니터링 테이블 --- *@
         <MudItem xs="12">
-            <MudTable Items="FilteredAgentStatusList" Hover="true" Dense="true" Class="mt-4"
-                      OnRowClick="@((TableRowClickEventArgs<AgentStatusDto> args) => ShowChartDialog(args.Item))" Style="cursor:pointer;">
+            <MudTable Items="FilteredAgentStatusList" Hover="true" Dense="true" Class="mt-4">
                 <HeaderContent>
                     <MudTh>Connection</MudTh>
                     <MudTh>Status</MudTh>
@@ -136,14 +147,16 @@ else
                     <MudTd DataLabel="IP Address">@context.IpAddress</MudTd>
                     <MudTd DataLabel="PC Name">@context.PcName</MudTd>
                     <MudTd DataLabel="Operating System(OS)">@FormatOperatingSystem(context.Os, context.SystemType)</MudTd>
-                    <MudTd DataLabel="CPU/Memory">
-                        <MudPaper Elevation="0" Class="d-flex align-center rounded pa-1 my-1"
-                                  Style="background: var(--mud-palette-background-grey); position: relative;">
-                            <MudProgressLinear Color="Color.Primary" Value="@context.CpuUsage" Class="rounded" Style="height:10px;" />
+                    <MudTd DataLabel="CPU/Memory" @onclick="() => ShowChartDialog(context)" Style="cursor:pointer;">
+                        <MudPaper Elevation="0" Class="d-flex align-center rounded pa-1"
+                                  Style="background: var(--mud-palette-background-grey);
+                        position: relative;">
+                            <MudProgressLinear Color="Color.Primary" Value="@context.CpuUsage" Class="rounded" Style="height:8px;" />
                         </MudPaper>
-                        <MudPaper Elevation="0" Class="d-flex align-center rounded pa-1 my-1"
-                                  Style="background: var(--mud-palette-background-grey); position: relative;">
-                            <MudProgressLinear Color="Color.Info" Value="@context.MemoryUsage" Class="rounded" Style="height:10px;" />
+                        <MudPaper Elevation="0" Class="d-flex align-center rounded pa-1 mt-1"
+                                  Style="background: var(--mud-palette-background-grey);
+                        position: relative;">
+                            <MudProgressLinear Color="Color.Info" Value="@context.MemoryUsage" Class="rounded" Style="height:8px;" />
                         </MudPaper>
                     </MudTd>
                     <MudTd DataLabel="Time Difference">
@@ -155,7 +168,8 @@ else
                     <MudTd DataLabel="Agent Ver'">@context.AppVersion</MudTd>
                 </RowTemplate>
                 <PagerContent>
-                    <MudTablePager />
+                    @* ▼▼▼ [수정] PageSizeOptions를 추가하여 페이지당 행 수 옵션을 변경합니다. ▼▼▼ *@
+                    <MudTablePager PageSizeOptions="new int[] { 15, 30, 50 }" />
                 </PagerContent>
                 <NoRecordsContent>
                     <MudText>조회된 에이전트 정보가 없습니다.</MudText>
@@ -189,7 +203,9 @@ else
 
     private string GetCardClass(string filterType)
     {
-        var baseClass = "pa-4 d-flex flex-column justify-center align-center";
+        // ▼▼▼ [수정] flex-column, justify-center, align-center를
+        // justify-space-between, align-center로 변경합니다.
+        var baseClass = "pa-4 d-flex justify-space-between align-center";
         return _activeFilter == filterType ? $"{baseClass} active-card" : baseClass;
     }
 
