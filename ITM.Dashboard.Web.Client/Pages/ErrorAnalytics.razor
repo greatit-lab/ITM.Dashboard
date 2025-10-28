@@ -4,6 +4,7 @@
 @using ITM.Dashboard.Web.Client.Models
 @using ITM.Dashboard.Web.Client.Shared
 @inject IHttpClientFactory HttpClientFactory
+@implements IDisposable
 
 <PageTitle>Alert History</PageTitle>
 
@@ -88,9 +89,11 @@ else if (_isSearched)
         <MudItem xs="12" md="4">
             <MudPaper Class="pa-4" Style="height:100%">
                 <MudText Typo="Typo.h6" GutterBottom="true">Alerts by Intool</MudText>
+
                 @if (_summary?.ErrorCountByEqp?.Any() == true)
                 {
-                    <AmChart ChartType="ErrorByEqpPieChart" ChartData="_summary.ErrorCountByEqp" ChartConfig="_donutChartConfig" Height="200px" />
+                    @* ▼▼▼ [수정] ChartType과 ChartConfig 변수 이름을 변경합니다. ▼▼▼ *@
+                    <AmChart ChartType="ErrorByEqpColumnChart" ChartData="_summary.ErrorCountByEqp" ChartConfig="_columnChartConfig" Height="200px" />
                 }
                 else
                 {
@@ -142,10 +145,14 @@ else
     private List<ErrorTrendDataPointDto> _trendData = new();
 
     private object _trendChartConfig;
-    private object _donutChartConfig;
+    private object _columnChartConfig;
+    
+    private DotNetObjectReference<ErrorAnalytics> _dotNetHelper; // ▼▼▼ [추가] JS কল백용 헬퍼 ▼▼▼
 
     protected override async Task OnInitializedAsync()
     {
+        _dotNetHelper = DotNetObjectReference.Create(this); // ▼▼▼ [추가] 헬퍼 인스턴스 생성 ▼▼▼
+
         _trendChartConfig = new
         {
             xField = "date",
@@ -168,13 +175,44 @@ else
             }
         };
 
-        _donutChartConfig = new
+        // [수정] _donutChartConfig -> _columnChartConfig
+        _columnChartConfig = new
         {
             valueField = "value",
-            categoryField = "label"
+            categoryField = "label",
+            dotNetHelper = _dotNetHelper // ▼▼▼ [추가] 헬퍼를 차트 설정에 전달 ▼▼▼
         };
-
         await LoadSites();
+    }
+
+    // ▼▼▼ [추가] JS에서 호출할 메서드 (막대 클릭 시 실행됨) ▼▼▼
+    [JSInvokable]
+    public async Task OnChartEqpIdClicked(string eqpId)
+    {
+        // 이미 선택된 EQPID를 다시 클릭하면 필터 해제(null)
+        if (_selectedEqpId == eqpId)
+        {
+            _selectedEqpId = null;
+        }
+        else
+        {
+            _selectedEqpId = eqpId;
+        }
+
+        // StateHasChanged()를 호출하여 MudAutocomplete UI를 업데이트합니다.
+        StateHasChanged(); 
+
+        // 데이터 그리드를 리로드하여 필터를 적용합니다.
+        if (_grid != null)
+        {
+            await _grid.ReloadServerData();
+        }
+    }
+    
+    // ▼▼▼ [추가] 컴포넌트 소멸 시 헬퍼 객체 정리 ▼▼▼
+    public void Dispose()
+    {
+        _dotNetHelper?.Dispose();
     }
 
     private async Task LoadSites()
