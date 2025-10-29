@@ -150,12 +150,12 @@ else
                     <MudTd DataLabel="CPU/Memory" @onclick="() => ShowChartDialog(context)" Style="cursor:pointer;">
                         <MudPaper Elevation="0" Class="d-flex align-center rounded pa-1"
                                   Style="background: var(--mud-palette-background-grey);
-                        position: relative;">
+                            position: relative;">
                             <MudProgressLinear Color="Color.Primary" Value="@context.CpuUsage" Class="rounded" Style="height:8px;" />
                         </MudPaper>
                         <MudPaper Elevation="0" Class="d-flex align-center rounded pa-1 mt-1"
                                   Style="background: var(--mud-palette-background-grey);
-                        position: relative;">
+                            position: relative;">
                             <MudProgressLinear Color="Color.Info" Value="@context.MemoryUsage" Class="rounded" Style="height:8px;" />
                         </MudPaper>
                     </MudTd>
