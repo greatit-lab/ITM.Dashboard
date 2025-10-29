@@ -43,6 +43,10 @@
     .grid-container {
         overflow-x: auto;
     }
+
+    .overflow-y-auto {
+        overflow-y: hidden !important;
+    }
 </style>
 
 <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
@@ -63,7 +67,7 @@
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="4" md="3">
-            <MudSelect T="string" Label="SDWT (All)" Value="_selectedSdwt" ValueChanged="OnSdwtChanged"
+            <MudSelect T="string" Label="SDWT (All)" Required="true" Value="_selectedSdwt" ValueChanged="OnSdwtChanged"
                        Disabled="@(string.IsNullOrEmpty(_selectedSite))"
                        Dense="true" Margin="Margin.Dense" Clearable="true" Variant="Variant.Outlined">
                 @foreach (var sdwt in _sdwts)
@@ -77,7 +81,7 @@
                              SearchFunc="SearchEqpIds"
                              Disabled="@(string.IsNullOrEmpty(_selectedSite))"
                              Dense="true" Margin="Margin.Dense" Clearable="true" Variant="Variant.Outlined"
-                             ResetValueOnEmptyText="true" CoerceText="false" />
+                             MaxItems="null" ResetValueOnEmptyText="true" CoerceText="false" />
         </MudItem>
     </MudGrid>
 </MudPaper>
