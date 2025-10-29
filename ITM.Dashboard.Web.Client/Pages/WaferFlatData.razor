@@ -126,9 +126,11 @@
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="4" md="1">
+            @* --- [수정 1/4] MaxItems="null" 추가, Disabled 로직 변경 --- *@
             <MudAutocomplete T="string" Label="EQP ID" Value="_selectedEqpid" ValueChanged="OnEqpidChanged" SearchFunc="SearchEqpids"
                              ResetValueOnEmptyText="true" CoerceText="false" CoerceValue="false" Dense="true" Margin="Margin.Dense"
-                             Disabled="@(string.IsNullOrEmpty(_selectedSdwt))" />
+                             MaxItems="null"
+                             Disabled="@(string.IsNullOrEmpty(_selectedSdwt) || _isEqpIdListLoading)" />
         </MudItem>
         <MudItem xs="12" sm="4" md="1">
             <MudAutocomplete T="string" Label="Lot ID" Value="_selectedLotId" ValueChanged="OnLotIdChanged" SearchFunc="SearchLotIds"
@@ -136,10 +138,12 @@
                              Disabled="@(string.IsNullOrEmpty(_selectedEqpid))" />
         </MudItem>
         <MudItem xs="12" sm="4" md="1">
+            @* --- [수정 2/4] MaxItems="null" 추가 --- *@
             <MudAutocomplete T="string" Label="Wafer ID"
                              Value="_selectedWaferId" ValueChanged="OnWaferIdChanged"
                              SearchFunc="SearchWaferIds"
                              ResetValueOnEmptyText="true" CoerceText="false" CoerceValue="false" Dense="true" Margin="Margin.Dense"
+                             MaxItems="null"
                              Disabled="@(string.IsNullOrEmpty(_selectedLotId))" />
         </MudItem>
         <MudItem xs="6" sm="3" md="2">
@@ -153,7 +157,8 @@
                            Disabled="@(string.IsNullOrEmpty(_selectedEqpid))" />
         </MudItem>
         <MudItem xs="4" sm="2" md="1">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SearchData" Disabled="@(string.IsNullOrEmpty(_selectedSite))" FullWidth="true">Search</MudButton>
+            @* --- [수정 3/4] Disabled 로직 변경 --- *@
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SearchData" Disabled="@(string.IsNullOrEmpty(_selectedEqpid))" FullWidth="true">Search</MudButton>
         </MudItem>
         <MudItem xs="4" sm="2" md="1">
             <MudButton Variant="Variant.Outlined" OnClick="ResetFilters" FullWidth="true">Reset</MudButton>
@@ -444,6 +449,9 @@ else
     private int _selectedPointDataRowIndex = -1;
     private bool? _pdfExistsForSelectedRow;
 
+    @* --- [수정 4/4] EQPID 로딩 상태 플래그 추가 --- *@
+    private bool _isEqpIdListLoading = false;
+
     protected override async Task OnInitializedAsync() => await LoadSites();
 
     private Func<WaferFlatDataDto, int, string> RowClassFunc => (item, index) =>
@@ -480,7 +488,6 @@ else
         }
 
         var client = HttpClientFactory.CreateClient("ITM.Dashboard.Api");
-
         // [핵심] 행 선택 시, 가장 먼저 PDF 존재 여부를 확인합니다.
         try
         {
@@ -540,7 +547,6 @@ else
     private async Task LoadPdfImage(int pointNumber)
     {
         _selectedPointDataRowIndex = pointNumber;
-
         if (_selectedRowItem?.EqpId == null || _selectedRowItem.DateTime == null)
         {
             return;
@@ -554,7 +560,6 @@ else
         var eqpid = Uri.EscapeDataString(_selectedRowItem.EqpId);
         var dateTime = _selectedRowItem.DateTime.Value.ToString("o");
         var url = $"api/WaferData/pdfimage?eqpid={eqpid}&dateTime={dateTime}&pointNumber={pointNumber}";
-
         // ▼▼▼ [수정] try-catch 블록을 추가하여 이미지 로드 실패를 처리합니다.
         try
         {
@@ -675,11 +680,20 @@ else
     {
         _selectedSdwt = newSdwt;
         ResetDependentFilters("sdwt");
+
+        // ▼▼▼ [수정] EQPID 로딩 상태 플래그 관리 ▼▼▼
+        _isEqpIdListLoading = true;
+        StateHasChanged(); // UI 갱신 (필터 비활성화)
+
         if (!string.IsNullOrEmpty(_selectedSdwt))
         {
             var client = HttpClientFactory.CreateClient("ITM.Dashboard.Api");
             _eqpids = await client.GetFromJsonAsync<List<string>>($"api/Filters/eqpids/{_selectedSdwt}") ?? new();
         }
+
+        _isEqpIdListLoading = false;
+        StateHasChanged(); // UI 갱신 (필터 활성화)
+        // ▲▲▲ [수정] 여기까지 ▲▲▲
     }
 
     private async Task OnEqpidChanged(string newEqpid)
@@ -746,7 +760,8 @@ else
     private async Task<IEnumerable<string>> SearchEqpids(string value, CancellationToken token)
     {
         await Task.Yield();
-        // ▼▼▼ [핵심 수정] 검색어가 비어있거나, 현재 선택된 EQP ID와 같을 경우 전체 목록을 반환합니다. ▼▼▼
+        // ▼▼▼ [핵심 수정] 검색어가 비어있거나, 현재 선택된 EQP ID와 같을 경우 전체 목록을 반환합니다.
+        // ▼▼▼
         if (string.IsNullOrEmpty(value) || value == _selectedEqpid)
         {
             return _eqpids;
@@ -779,7 +794,6 @@ else
         }
 
         _showDateRangeWarning = false;
-
         if (_dataGrid is not null)
         {
             if (_startDate.HasValue && !_endDate.HasValue)
