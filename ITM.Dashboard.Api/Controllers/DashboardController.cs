@@ -45,51 +45,61 @@ namespace ITM.Dashboard.Api.Controllers
             await using var conn = new NpgsqlConnection(GetConnectionString());
             await conn.OpenAsync();
 
-            var totalMonitoredSql = new StringBuilder("SELECT COUNT(DISTINCT r.eqpid) FROM public.ref_equipment r JOIN public.agent_info a ON r.eqpid = a.eqpid WHERE 1=1");
-            await using (var cmd = new NpgsqlCommand())
+            // [수정] 5개의 쿼리를 1개로 통합
+            var sqlBuilder = new StringBuilder();
+            var cmd = new NpgsqlCommand();
+
+            // 1=1 대신 사용할 기본 필터 로직 (sdwt.is_use = 'Y')
+            string baseFilter = "r.sdwt IN (SELECT sdwt FROM public.ref_sdwt WHERE is_use = 'Y')";
+
+            // site 또는 sdwt 조건 추가
+            if (!string.IsNullOrEmpty(sdwt))
             {
-                AddFilterLogic(totalMonitoredSql, cmd, site, sdwt);
-                cmd.Connection = conn;
-                cmd.CommandText = totalMonitoredSql.ToString();
-                summary.TotalEqpCount = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+                baseFilter += " AND r.sdwt = @sdwt";
+                cmd.Parameters.AddWithValue("sdwt", sdwt);
+            }
+            else if (!string.IsNullOrEmpty(site))
+            {
+                baseFilter += " AND r.sdwt IN (SELECT sdwt FROM public.ref_sdwt WHERE site = @site AND is_use = 'Y')";
+                cmd.Parameters.AddWithValue("site", site);
             }
 
-            var onlineAgentSql = new StringBuilder("SELECT COUNT(DISTINCT r.eqpid) FROM public.ref_equipment r JOIN public.agent_status s ON r.eqpid = s.eqpid WHERE s.status = 'ONLINE'");
-            await using (var cmd = new NpgsqlCommand())
-            {
-                AddFilterLogic(onlineAgentSql, cmd, site, sdwt);
-                cmd.Connection = conn;
-                cmd.CommandText = onlineAgentSql.ToString();
-                summary.OnlineAgentCount = Convert.ToInt32(await cmd.ExecuteScalarAsync());
-            }
+            sqlBuilder.Append($@"
+                SELECT
+                    (SELECT COUNT(DISTINCT r.eqpid) 
+                     FROM public.ref_equipment r JOIN public.agent_info a ON r.eqpid = a.eqpid 
+                     WHERE {baseFilter}) AS TotalEqpCount,
 
-            var todayErrorSql = new StringBuilder("SELECT COUNT(*) FROM public.plg_error e JOIN public.ref_equipment r ON e.eqpid = r.eqpid WHERE e.time_stamp >= CURRENT_DATE");
-            await using (var cmd = new NpgsqlCommand())
-            {
-                AddFilterLogic(todayErrorSql, cmd, site, sdwt);
-                cmd.Connection = conn;
-                cmd.CommandText = todayErrorSql.ToString();
-                summary.TodayErrorCount = Convert.ToInt32(await cmd.ExecuteScalarAsync());
-            }
+                    (SELECT COUNT(DISTINCT r.eqpid) 
+                     FROM public.ref_equipment r JOIN public.agent_status s ON r.eqpid = s.eqpid 
+                     WHERE s.status = 'ONLINE' AND {baseFilter}) AS OnlineAgentCount,
 
-            // ▼▼▼ [추가] 최근 1시간 내 알람 수를 조회하는 로직 ▼▼▼
-            var newAlarmSql = new StringBuilder("SELECT COUNT(*) FROM public.plg_error e JOIN public.ref_equipment r ON e.eqpid = r.eqpid WHERE e.time_stamp >= NOW() - INTERVAL '1 hour'");
-            await using (var cmd = new NpgsqlCommand())
-            {
-                AddFilterLogic(newAlarmSql, cmd, site, sdwt);
-                cmd.Connection = conn;
-                cmd.CommandText = newAlarmSql.ToString();
-                summary.NewAlarmCount = Convert.ToInt32(await cmd.ExecuteScalarAsync());
-            }
-            // ▲▲▲ [추가] 여기까지 ▲▲▲
+                    (SELECT COUNT(*) 
+                     FROM public.plg_error e JOIN public.ref_equipment r ON e.eqpid = r.eqpid 
+                     WHERE e.time_stamp >= CURRENT_DATE AND {baseFilter}) AS TodayErrorCount,
 
-            var todayDataSql = new StringBuilder("SELECT COUNT(*) FROM public.plg_wf_flat w JOIN public.ref_equipment r ON w.eqpid = r.eqpid WHERE w.serv_ts >= CURRENT_DATE");
-            await using (var cmd = new NpgsqlCommand())
+                    (SELECT COUNT(*) 
+                     FROM public.plg_error e JOIN public.ref_equipment r ON e.eqpid = r.eqpid 
+                     WHERE e.time_stamp >= NOW() - INTERVAL '1 hour' AND {baseFilter}) AS NewAlarmCount,
+
+                    (SELECT COUNT(*) 
+                     FROM public.plg_wf_flat w JOIN public.ref_equipment r ON w.eqpid = r.eqpid 
+                     WHERE w.serv_ts >= CURRENT_DATE AND {baseFilter}) AS TodayDataCount
+            ");
+
+            cmd.Connection = conn;
+            cmd.CommandText = sqlBuilder.ToString();
+
+            await using (var reader = await cmd.ExecuteReaderAsync())
             {
-                AddFilterLogic(todayDataSql, cmd, site, sdwt);
-                cmd.Connection = conn;
-                cmd.CommandText = todayDataSql.ToString();
-                summary.TodayDataCount = Convert.ToInt64(await cmd.ExecuteScalarAsync());
+                if (await reader.ReadAsync())
+                {
+                    summary.TotalEqpCount = Convert.ToInt32(reader["TotalEqpCount"]);
+                    summary.OnlineAgentCount = Convert.ToInt32(reader["OnlineAgentCount"]);
+                    summary.TodayErrorCount = Convert.ToInt32(reader["TodayErrorCount"]);
+                    summary.NewAlarmCount = Convert.ToInt32(reader["NewAlarmCount"]);
+                    summary.TodayDataCount = Convert.ToInt64(reader["TodayDataCount"]);
+                }
             }
 
             return Ok(summary);
