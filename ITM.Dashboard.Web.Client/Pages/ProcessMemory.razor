@@ -7,6 +7,12 @@
 
 <PageTitle>Process Performance</PageTitle>
 
+<style>
+    .overflow-y-auto {
+        overflow-y: hidden !important;
+    }
+</style>
+
 <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
     <MudIcon Icon="@Icons.Material.Rounded.Memory" Size="Size.Large" />
     <MudText Typo="Typo.h4">Process Memory</MudText>
@@ -33,7 +39,7 @@
         <MudItem xs="12" sm="4" md="2">
             <MudAutocomplete T="string" Label="EQP ID" @bind-Value="_selectedEqpId" SearchFunc="SearchEqpids"
                              ResetValueOnEmptyText="true" CoerceText="false" CoerceValue="false" Dense="true" Margin="Margin.Dense"
-                             Required="true" Disabled="@(string.IsNullOrEmpty(_selectedSdwt) || _isEqpIdListLoading)" />
+                             Required="true" MaxItems="null" Disabled="@(string.IsNullOrEmpty(_selectedSdwt) || _isEqpIdListLoading)" />
         </MudItem>
         <MudItem xs="6" sm="6" md="2">
             <MudDatePicker Label="Start Date" @bind-Date="_startDate" Dense="true" Margin="Margin.Dense" />
