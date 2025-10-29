@@ -147,12 +147,11 @@ else
     private object _trendChartConfig;
     private object _columnChartConfig;
     
-    private DotNetObjectReference<ErrorAnalytics> _dotNetHelper; // ▼▼▼ [추가] JS কল백용 헬퍼 ▼▼▼
+    private DotNetObjectReference<ErrorAnalytics> _dotNetHelper;
 
     protected override async Task OnInitializedAsync()
     {
-        _dotNetHelper = DotNetObjectReference.Create(this); // ▼▼▼ [추가] 헬퍼 인스턴스 생성 ▼▼▼
-
+        _dotNetHelper = DotNetObjectReference.Create(this);
         _trendChartConfig = new
         {
             xField = "date",
@@ -200,7 +199,7 @@ else
         }
 
         // StateHasChanged()를 호출하여 MudAutocomplete UI를 업데이트합니다.
-        StateHasChanged(); 
+        StateHasChanged();
 
         // 데이터 그리드를 리로드하여 필터를 적용합니다.
         if (_grid != null)
@@ -208,7 +207,7 @@ else
             await _grid.ReloadServerData();
         }
     }
-    
+
     // ▼▼▼ [추가] 컴포넌트 소멸 시 헬퍼 객체 정리 ▼▼▼
     public void Dispose()
     {
