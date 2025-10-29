@@ -8,6 +8,12 @@
 
 <PageTitle>PreAlign Data</PageTitle>
 
+<style>
+    .overflow-y-auto {
+        overflow-y: hidden !important;
+    }
+</style>
+
 <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
     <MudIcon Icon="@Icons.Material.Rounded.GpsFixed" Size="Size.Large" />
     <MudText Typo="Typo.h4">PreAlign Data</MudText>
@@ -16,7 +22,7 @@
 <MudPaper Class="pa-4 mb-4">
     <MudGrid Spacing="2" AlignItems="AlignItems.Center">
         <MudItem xs="6" sm="4" md="2">
-            <MudSelect T="string" Label="Site" Value="_selectedSite" ValueChanged="OnSiteChanged" Dense="true" Margin="Margin.Dense">
+            <MudSelect T="string" Label="Site" Required="true" Value="_selectedSite" ValueChanged="OnSiteChanged" Dense="true" Margin="Margin.Dense">
                 @foreach (var site in _sites)
                 {
                     <MudSelectItem T="string" Value="@site">@site</MudSelectItem>
@@ -24,7 +30,7 @@
             </MudSelect>
         </MudItem>
         <MudItem xs="6" sm="4" md="2">
-            <MudSelect T="string" Label="SDWT" Value="_selectedSdwt" ValueChanged="OnSdwtChanged" Disabled="@(string.IsNullOrEmpty(_selectedSite))" Dense="true" Margin="Margin.Dense">
+            <MudSelect T="string" Label="SDWT" Required="true" Value="_selectedSdwt" ValueChanged="OnSdwtChanged" Disabled="@(string.IsNullOrEmpty(_selectedSite))" Dense="true" Margin="Margin.Dense">
                 @foreach (var sdwt in _sdwts)
                 {
                     <MudSelectItem T="string" Value="@sdwt">@sdwt</MudSelectItem>
@@ -32,9 +38,9 @@
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="4" md="2">
-            <MudAutocomplete T="string" Label="EQP ID" @bind-Value="_selectedEqpId" SearchFunc="SearchEqpids"
+            <MudAutocomplete T="string" Label="EQP ID" Required="true" @bind-Value="_selectedEqpId" SearchFunc="SearchEqpids"
                              ResetValueOnEmptyText="true" CoerceText="false" CoerceValue="false" Dense="true" Margin="Margin.Dense"
-                             Disabled="@(string.IsNullOrEmpty(_selectedSite))" />
+                             MaxItems="null" Disabled="@(string.IsNullOrEmpty(_selectedSite))" />
         </MudItem>
         <MudItem xs="6" sm="6" md="2">
             <MudDatePicker Label="Start Date" @bind-Date="_startDate" Dense="true" Margin="Margin.Dense" />
