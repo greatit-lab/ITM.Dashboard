@@ -8,7 +8,7 @@
 <PageTitle>Lot Uniformity Trend</PageTitle>
 
 <style>
-    .overflow-y: auto {
+    .overflow-y-auto {
         overflow-y: hidden !important;
     }
 </style>
@@ -31,7 +31,7 @@
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="4" md="2">
-            <MudSelect T="string" Label="SDWT" Value="_selectedSdwt" Required="true" ValueChanged="OnSdwtChanged" Disabled="string.IsNullOrEmpty(_selectedSite)" Dense="true" Margin="Margin.Dense">
+            <MudSelect T="string" Label="SDWT" Required="true" Value="_selectedSdwt" ValueChanged="OnSdwtChanged" Disabled="string.IsNullOrEmpty(_selectedSite)" Dense="true" Margin="Margin.Dense">
                 @foreach (var sdwt in _sdwts)
                 {
                     <MudSelectItem Value="@sdwt">@sdwt</MudSelectItem>
