@@ -8,6 +8,12 @@
 
 <PageTitle>Alert History</PageTitle>
 
+<style>
+    .overflow-y-auto {
+        overflow-y: hidden !important;
+    }
+</style>
+
 <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
     <MudIcon Icon="@Icons.Material.Rounded.Warning" Size="Size.Large" />
     <MudText Typo="Typo.h4">Alert History</MudText>
@@ -24,7 +30,8 @@
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="6" md="2">
-            <MudSelect T="string" Label="SDWT (All)" Value="_selectedSdwt" ValueChanged="OnSdwtChanged" Disabled="@(string.IsNullOrEmpty(_selectedSite))" Dense="true" Margin="Margin.Dense" Clearable="true">
+            <MudSelect T="string" Label="SDWT (All)" Value="_selectedSdwt" ValueChanged="OnSdwtChanged" Disabled="@(string.IsNullOrEmpty(_selectedSite))"
+                       Dense="true" Margin="Margin.Dense" Clearable="true" Required="true" RequiredError="SDWT를 선택하세요.">
                 @foreach (var sdwt in _sdwts)
                 {
                     <MudSelectItem T="string" Value="@sdwt">@sdwt</MudSelectItem>
@@ -34,14 +41,15 @@
         <MudItem xs="12" sm="12" md="3">
             <MudAutocomplete T="string" Label="EQP ID (All)" @bind-Value="_selectedEqpId" SearchFunc="SearchEqpids"
                              ResetValueOnEmptyText="true" CoerceText="false" CoerceValue="false" Dense="true" Margin="Margin.Dense"
-                             Disabled="@(string.IsNullOrEmpty(_selectedSite))" />
+                             Disabled="@(string.IsNullOrEmpty(_selectedSdwt) || _isEqpIdListLoading)" MaxItems="null"
+                             Clearable="true" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <MudDateRangePicker @bind-DateRange="_dateRange" Label="Date Range" Dense="true" Margin="Margin.Dense" />
         </MudItem>
         @* ▼▼▼ [수정] 조회/Reset 버튼 레이아웃 변경 ▼▼▼ *@
         <MudItem xs="6" sm="3" md="1">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OnSearchClicked" Disabled="@(string.IsNullOrEmpty(_selectedSite))" FullWidth="true">SEARCH</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OnSearchClicked" Disabled="@(string.IsNullOrEmpty(_selectedSdwt))" FullWidth="true">SEARCH</MudButton>
         </MudItem>
         <MudItem xs="6" sm="3" md="1">
             <MudButton Variant="Variant.Outlined" OnClick="ResetFilters" FullWidth="true">Reset</MudButton>
@@ -123,12 +131,13 @@ else if (_isSearched)
 }
 else
 {
-    <MudAlert Severity="Severity.Info">조회할 Site를 선택 후, 조회 버튼을 클릭하세요.</MudAlert>
+    <MudAlert Severity="Severity.Info">Site와 SDWT를 선택 후, SEARCH 버튼을 클릭하세요.</MudAlert>
 }
 
 @code {
     private bool _isLoading = false;
     private bool _isSearched = false;
+    private bool _isEqpIdListLoading = false;
     private MudDataGrid<ErrorLogDto> _grid;
 
     private DateRange _dateRange = new DateRange(DateTime.Now.Date.AddDays(-14), DateTime.Now.Date);
@@ -179,7 +188,7 @@ else
         {
             valueField = "value",
             categoryField = "label",
-            dotNetHelper = _dotNetHelper // ▼▼▼ [추가] 헬퍼를 차트 설정에 전달 ▼▼▼
+            dotNetHelper = _dotNetHelper // 헬퍼를 차트 설정에 전달
         };
         await LoadSites();
     }
@@ -231,9 +240,9 @@ else
         {
             var client = HttpClientFactory.CreateClient("ITM.Dashboard.Api");
             _sdwts = await client.GetFromJsonAsync<List<string>>($"api/Filters/sdwts/{_selectedSite}") ?? new();
-            // ▼▼▼ [수정] Site 변경 시 EQPID 목록 로드 경로 변경 ▼▼▼
-            _eqpIds = await client.GetFromJsonAsync<List<string>>($"api/Filters/eqpidsbysite/error/{_selectedSite}") ?? new();
+            // Site 변경 시에는 SDWT 목록만 로드하고 EQPID는 로드하지 않음 (SDWT 선택 시 로드)
         }
+        StateHasChanged(); // SDWT 목록 업데이트 반영
     }
 
     private async Task OnSdwtChanged(string newSdwt)
@@ -241,14 +250,30 @@ else
         _selectedSdwt = newSdwt;
         _selectedEqpId = null;
         _eqpIds.Clear();
-        if (!string.IsNullOrEmpty(_selectedSite))
+        if (string.IsNullOrEmpty(_selectedSdwt))
+        {
+            _isEqpIdListLoading = false; // SDWT 선택 해제 시 로딩 상태 해제
+            StateHasChanged();
+            return;
+        }
+
+        // 1. 로딩 시작
+        _isEqpIdListLoading = true;
+        StateHasChanged(); // UI 업데이트 (필터 비활성화)
+
+        try
         {
             var client = HttpClientFactory.CreateClient("ITM.Dashboard.Api");
-            // ▼▼▼ [수정] SDWT 변경 시 EQPID 목록 로드 경로 변경 ▼▼▼
             var url = string.IsNullOrEmpty(_selectedSdwt)
                 ? $"api/Filters/eqpidsbysite/error/{_selectedSite}"
                 : $"api/Filters/eqpids/error/{_selectedSdwt}";
             _eqpIds = await client.GetFromJsonAsync<List<string>>(url) ?? new();
+        }
+        finally
+        {
+            // 2. 로딩 완료
+            _isEqpIdListLoading = false;
+            StateHasChanged(); // UI 업데이트 (필터 활성화)
         }
     }
 
@@ -316,6 +341,7 @@ else
 
         _sdwts.Clear();
         _eqpIds.Clear();
+        _isEqpIdListLoading = false;
 
         _isSearched = false;
         _summary = new();
@@ -325,6 +351,7 @@ else
         {
             await _grid.ReloadServerData();
         }
+        StateHasChanged(); // UI 갱신
     }
 
     private async Task<GridData<ErrorLogDto>> LoadGridData(GridState<ErrorLogDto> state)
