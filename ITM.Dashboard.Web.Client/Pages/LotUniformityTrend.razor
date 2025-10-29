@@ -7,6 +7,12 @@
 
 <PageTitle>Lot Uniformity Trend</PageTitle>
 
+<style>
+    .overflow-y: auto {
+        overflow-y: hidden !important;
+    }
+</style>
+
 <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
     <MudIcon Icon="@Icons.Material.Rounded.StackedLineChart" Size="Size.Large" />
     <MudText Typo="Typo.h4">Lot Uniformity Trend</MudText>
@@ -17,7 +23,7 @@
     <MudGrid Spacing="2" Justify="Justify.FlexStart">
         @* --- 1열 --- *@
         <MudItem xs="12" sm="4" md="2">
-            <MudSelect T="string" Label="Site" Value="_selectedSite" ValueChanged="OnSiteChanged" Dense="true" Margin="Margin.Dense">
+            <MudSelect T="string" Label="Site" Required="true" Value="_selectedSite" ValueChanged="OnSiteChanged" Dense="true" Margin="Margin.Dense">
                 @foreach (var site in _sites)
                 {
                     <MudSelectItem Value="@site">@site</MudSelectItem>
@@ -25,21 +31,21 @@
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="4" md="2">
-            <MudSelect T="string" Label="SDWT" Value="_selectedSdwt" ValueChanged="OnSdwtChanged" Disabled="string.IsNullOrEmpty(_selectedSite)" Dense="true" Margin="Margin.Dense">
+            <MudSelect T="string" Label="SDWT" Value="_selectedSdwt" Required="true" ValueChanged="OnSdwtChanged" Disabled="string.IsNullOrEmpty(_selectedSite)" Dense="true" Margin="Margin.Dense">
                 @foreach (var sdwt in _sdwts)
                 {
                     <MudSelectItem Value="@sdwt">@sdwt</MudSelectItem>
                 }
             </MudSelect>
         </MudItem>
-        <MudItem xs="12" sm="4" md="2"><MudAutocomplete T="string" Label="EQP ID" SearchFunc="SearchEqpIds" Value="_selectedEqpId" ValueChanged="OnEqpidChanged" Disabled="string.IsNullOrEmpty(_selectedSdwt)" Dense="true" Margin="Margin.Dense" MaxItems="null" /></MudItem>
+        <MudItem xs="12" sm="4" md="2"><MudAutocomplete T="string" Label="EQP ID" SearchFunc="SearchEqpIds" Required="true" Value="_selectedEqpId" ValueChanged="OnEqpidChanged" Disabled="string.IsNullOrEmpty(_selectedSdwt)" Dense="true" Margin="Margin.Dense" MaxItems="null" /></MudItem>
         <MudItem xs="12" sm="6" md="3"><MudDatePicker Label="Start Date" @bind-Date="_startDate" @bind-Date:after="() => InvokeAsync(OnDateChanged)" Dense="true" Margin="Margin.Dense" PickerVariant="PickerVariant.Dialog" /></MudItem>
         <MudItem xs="12" sm="6" md="3"><MudDatePicker Label="End Date" @bind-Date="_endDate" @bind-Date:after="() => InvokeAsync(OnDateChanged)" Dense="true" Margin="Margin.Dense" PickerVariant="PickerVariant.Dialog" /></MudItem>
 
         @* --- 2열 --- *@
-        <MudItem xs="12" sm="4" md="2"><MudAutocomplete T="string" Label="Lot ID" SearchFunc="SearchLotIds" Value="_selectedLotId" ValueChanged="OnLotIdChanged" Disabled="string.IsNullOrEmpty(_selectedEqpId)" Dense="true" Margin="Margin.Dense" MaxItems="null" /></MudItem>
-        <MudItem xs="12" sm="4" md="2"><MudAutocomplete T="string" Label="Cassette RCP" SearchFunc="SearchCassetteRcps" Value="_selectedCassetteRcp" ValueChanged="OnCassetteRcpChanged" Disabled="string.IsNullOrEmpty(_selectedLotId)" Dense="true" Margin="Margin.Dense" MaxItems="null" /></MudItem>
-        <MudItem xs="12" sm="4" md="2"><MudAutocomplete T="string" Label="Stage Group" SearchFunc="SearchStageGroups" Value="_selectedStageGroup" ValueChanged="OnStageGroupChanged" Disabled="string.IsNullOrEmpty(_selectedCassetteRcp)" Dense="true" Margin="Margin.Dense" MaxItems="null" /></MudItem>
+        <MudItem xs="12" sm="4" md="2"><MudAutocomplete T="string" Label="Lot ID" SearchFunc="SearchLotIds" Required="true" Value="_selectedLotId" ValueChanged="OnLotIdChanged" Disabled="string.IsNullOrEmpty(_selectedEqpId)" Dense="true" Margin="Margin.Dense" MaxItems="null" /></MudItem>
+        <MudItem xs="12" sm="4" md="2"><MudAutocomplete T="string" Label="Cassette RCP" SearchFunc="SearchCassetteRcps" Required="true" Value="_selectedCassetteRcp" ValueChanged="OnCassetteRcpChanged" Disabled="string.IsNullOrEmpty(_selectedLotId)" Dense="true" Margin="Margin.Dense" MaxItems="null" /></MudItem>
+        <MudItem xs="12" sm="4" md="2"><MudAutocomplete T="string" Label="Stage Group" SearchFunc="SearchStageGroups" Required="true" Value="_selectedStageGroup" ValueChanged="OnStageGroupChanged" Disabled="string.IsNullOrEmpty(_selectedCassetteRcp)" Dense="true" Margin="Margin.Dense" MaxItems="null" /></MudItem>
         <MudItem xs="12" sm="4" md="2"><MudAutocomplete T="string" Label="Film" SearchFunc="SearchFilms" Value="_selectedFilm" ValueChanged="OnFilmChanged" Disabled="string.IsNullOrEmpty(_selectedStageGroup)" Dense="true" Margin="Margin.Dense" MaxItems="null" /></MudItem>
         <MudItem xs="12" sm="4" md="2">
             <MudSelect T="string" Label="Y-Axis Metric" Value="_selectedMetric" ValueChanged="OnMetricChanged" Dense="true" Margin="Margin.Dense">
