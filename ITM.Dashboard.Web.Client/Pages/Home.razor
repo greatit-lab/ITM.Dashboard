@@ -96,91 +96,102 @@ else
 
         @* --- 2. 에이전트 상태 모니터링 테이블 --- *@
         <MudItem xs="12">
-            <MudTable Items="FilteredAgentStatusList" Hover="true" Dense="true" Class="mt-4">
-                <HeaderContent>
-                    <MudTh>Connection</MudTh>
-                    <MudTh>Status</MudTh>
-                    <MudTh>EQP ID</MudTh>
-                    <MudTh>Type</MudTh>
-                    <MudTh>IP Address</MudTh>
-                    <MudTh>PC Name</MudTh>
-                    <MudTh>Operating System(OS)</MudTh>
-                    <MudTh Style="width: 150px;">CPU / Memory</MudTh>
-                    <MudTh>
-                        <MudTooltip Text="+: Agent Fast, -: Agent Slow" Arrow="true" Placement="Placement.Top">
-                            Time Difference
-                        </MudTooltip>
-                    </MudTh>
-                    <MudTh>Last Contact</MudTh>
-                    <MudTh>Agent Ver</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="Connection">
-                        @if (context.IsOnline)
-                        {
-                            <MudChip T="object" Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Variant="Variant.Outlined">Online</MudChip>
-                        }
-                        else
-                        {
-                            <MudChip T="object" Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Small" Variant="Variant.Outlined">Offline</MudChip>
-                        }
-                    </MudTd>
-                    <MudTd DataLabel="Agent Status">
-                        @if (!context.IsOnline)
-                        {
-                            <MudChip T="object" Icon="@Icons.Material.Filled.HelpOutline" Color="Color.Default" Size="Size.Small" Variant="Variant.Outlined">Unknown</MudChip>
-                        }
-                        else if (context.TodayAlarmCount > 0)
-                        {
-                            <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
-                                <MudChip T="object" Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Small" Variant="Variant.Outlined">Alert</MudChip>
-                                <MudText Typo="Typo.caption">(@context.TodayAlarmCount)</MudText>
-                            </MudStack>
-                        }
-                        else
-                        {
-                            <MudChip T="object" Icon="@Icons.Material.Filled.Shield" Color="Color.Info" Size="Size.Small" Variant="Variant.Outlined">Run</MudChip>
-                        }
-                    </MudTd>
-                    <MudTd DataLabel="EQP ID">@context.EqpId</MudTd>
-                    <MudTd DataLabel="Type">@context.Type</MudTd>
-                    <MudTd DataLabel="IP Address">@context.IpAddress</MudTd>
-                    <MudTd DataLabel="PC Name">@context.PcName</MudTd>
-                    <MudTd DataLabel="Operating System(OS)">@FormatOperatingSystem(context.Os, context.SystemType)</MudTd>
-                    <MudTd DataLabel="CPU/Memory" @onclick="() => ShowChartDialog(context)" Style="cursor:pointer;">
-                        <MudPaper Elevation="0" Class="d-flex align-center rounded pa-1"
-                                  Style="background: var(--mud-palette-background-grey);
-                            position: relative;">
-                            <MudProgressLinear Color="Color.Primary" Value="@context.CpuUsage" Class="rounded" Style="height:8px;" />
-                        </MudPaper>
-                        <MudPaper Elevation="0" Class="d-flex align-center rounded pa-1 mt-1"
-                                  Style="background: var(--mud-palette-background-grey);
-                            position: relative;">
-                            <MudProgressLinear Color="Color.Info" Value="@context.MemoryUsage" Class="rounded" Style="height:8px;" />
-                        </MudPaper>
-                    </MudTd>
-                    <MudTd DataLabel="Time Difference">
-                        <MudText Typo="Typo.body2" Color="@GetClockDriftColor(context.ClockDrift)">
-                            @FormatTimeDifference(context.ClockDrift)
-                        </MudText>
-                    </MudTd>
-                    <MudTd DataLabel="Last Contact">@context.LastContact?.ToString("yy-MM-dd HH:mm:ss")</MudTd>
-                    <MudTd DataLabel="Agent Ver'">@context.AppVersion</MudTd>
-                </RowTemplate>
-                <PagerContent>
-                    @* ▼▼▼ [수정] PageSizeOptions를 추가하여 페이지당 행 수 옵션을 변경합니다. ▼▼▼ *@
-                    <MudTablePager PageSizeOptions="new int[] { 15, 30, 50 }" />
-                </PagerContent>
-                <NoRecordsContent>
-                    <MudText>조회된 에이전트 정보가 없습니다.</MudText>
-                </NoRecordsContent>
-            </MudTable>
+            @if (_isTableLoading)
+            {
+                @* [추가] 테이블 데이터 로딩 중에만 표시될 스피너 *@
+                <MudPaper Class="pa-4 d-flex justify-center align-center" Style="height: 300px;">
+                    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                </MudPaper>
+            }
+            else
+            {
+                <MudTable Items="FilteredAgentStatusList" Hover="true" Dense="true" Class="mt-4">
+                    <HeaderContent>
+                        <MudTh>Connection</MudTh>
+                        <MudTh>Status</MudTh>
+                        <MudTh>EQP ID</MudTh>
+                        <MudTh>Type</MudTh>
+                        <MudTh>IP Address</MudTh>
+                        <MudTh>PC Name</MudTh>
+                        <MudTh>Operating System(OS)</MudTh>
+                        <MudTh Style="width: 150px;">CPU / Memory</MudTh>
+                        <MudTh>
+                            <MudTooltip Text="+: Agent Fast, -: Agent Slow" Arrow="true" Placement="Placement.Top">
+                                Time Difference
+                            </MudTooltip>
+                        </MudTh>
+                        <MudTh>Last Contact</MudTh>
+                        <MudTh>Agent Ver</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Connection">
+                            @if (context.IsOnline)
+                            {
+                                <MudChip T="object" Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" Variant="Variant.Outlined">Online</MudChip>
+                            }
+                            else
+                            {
+                                <MudChip T="object" Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Small" Variant="Variant.Outlined">Offline</MudChip>
+                            }
+                        </MudTd>
+                        <MudTd DataLabel="Agent Status">
+                            @if (!context.IsOnline)
+                            {
+                                <MudChip T="object" Icon="@Icons.Material.Filled.HelpOutline" Color="Color.Default" Size="Size.Small" Variant="Variant.Outlined">Unknown</MudChip>
+                            }
+                            else if (context.TodayAlarmCount > 0)
+                            {
+                                <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                                    <MudChip T="object" Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Small" Variant="Variant.Outlined">Alert</MudChip>
+                                    <MudText Typo="Typo.caption">(@context.TodayAlarmCount)</MudText>
+                                </MudStack>
+                            }
+                            else
+                            {
+                                <MudChip T="object" Icon="@Icons.Material.Filled.Shield" Color="Color.Info" Size="Size.Small" Variant="Variant.Outlined">Run</MudChip>
+                            }
+                        </MudTd>
+                        <MudTd DataLabel="EQP ID">@context.EqpId</MudTd>
+                        <MudTd DataLabel="Type">@context.Type</MudTd>
+                        <MudTd DataLabel="IP Address">@context.IpAddress</MudTd>
+                        <MudTd DataLabel="PC Name">@context.PcName</MudTd>
+                        <MudTd DataLabel="Operating System(OS)">@FormatOperatingSystem(context.Os, context.SystemType)</MudTd>
+                        <MudTd DataLabel="CPU/Memory" @onclick="() => ShowChartDialog(context)" Style="cursor:pointer;">
+                            <MudPaper Elevation="0" Class="d-flex align-center rounded pa-1"
+                                      Style="background: var(--mud-palette-background-grey);
+                                position: relative;">
+                                <MudProgressLinear Color="Color.Primary" Value="@context.CpuUsage" Class="rounded" Style="height:8px;" />
+                            </MudPaper>
+                            <MudPaper Elevation="0" Class="d-flex align-center rounded pa-1 mt-1"
+                                      Style="background: var(--mud-palette-background-grey);
+                                position: relative;">
+                                <MudProgressLinear Color="Color.Info" Value="@context.MemoryUsage" Class="rounded" Style="height:8px;" />
+                            </MudPaper>
+                        </MudTd>
+                        <MudTd DataLabel="Time Difference">
+                            <MudText Typo="Typo.body2" Color="@GetClockDriftColor(context.ClockDrift)">
+                                @FormatTimeDifference(context.ClockDrift)
+                            </MudText>
+                        </MudTd>
+                        <MudTd DataLabel="Last Contact">@context.LastContact?.ToString("yy-MM-dd HH:mm:ss")</MudTd>
+                        <MudTd DataLabel="Agent Ver'">@context.AppVersion</MudTd>
+                    </RowTemplate>
+                    <PagerContent>
+                        @* ▼▼▼ [수정] PageSizeOptions를 추가하여 페이지당 행 수 옵션을 변경합니다. ▼▼▼ *@
+                        <MudTablePager PageSizeOptions="new int[] { 15, 30, 50 }" />
+                    </PagerContent>
+                    <NoRecordsContent>
+                        <MudText>조회된 에이전트 정보가 없습니다.</MudText>
+                    </NoRecordsContent>
+                </MudTable>
+            }
         </MudItem>
     </MudGrid>
 }
 
 @code {
     private bool _loading = true;
+    private bool _isTableLoading = false;
     private DashboardSummaryDto? _summary;
     private List<AgentStatusDto> _agentStatusList = new();
     private List<string> _sites = new();
@@ -242,7 +253,8 @@ else
 
     private async Task LoadDashboardData()
     {
-        _loading = true;
+        _loading = true;// 페이지 전체 로딩 시작
+        _isTableLoading = true; // 테이블 로딩 시작
         StateHasChanged();
 
         var client = HttpClientFactory.CreateClient("ITM.Dashboard.Api");
@@ -253,10 +265,15 @@ else
 
         try
         {
-            var summaryTask = client.GetFromJsonAsync<DashboardSummaryDto>($"api/dashboard/summary?{queryString}");
+            // 1. 빠른 요약(카드) 데이터 먼저 가져오기
+            _summary = await client.GetFromJsonAsync<DashboardSummaryDto>($"api/dashboard/summary?{queryString}");
+
+            // 2. 요약 데이터 로드 완료 시, 페이지 전체 로딩 스피너 제거
+            _loading = false;
+            StateHasChanged(); // ★★★ 중요: 카드가 먼저 표시됩니다! ★★★
+
+            // 3. 느린 테이블 데이터 이어서 가져오기
             var statusTask = client.GetFromJsonAsync<List<AgentStatusDto>>($"api/dashboard/agentstatus?{queryString}");
-            await Task.WhenAll(summaryTask, statusTask);
-            _summary = await summaryTask;
             _agentStatusList = (await statusTask ?? new()).OrderBy(s => s.EqpId).ToList();
         }
         catch (Exception ex)
@@ -267,7 +284,9 @@ else
         }
         finally
         {
+            // 4. 모든 작업 완료
             _loading = false;
+            _isTableLoading = false; // 테이블 로딩 완료
             StateHasChanged();
         }
     }
