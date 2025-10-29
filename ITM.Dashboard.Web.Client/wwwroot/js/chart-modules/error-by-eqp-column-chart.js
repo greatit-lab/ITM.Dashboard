@@ -27,7 +27,7 @@ window.AmChartMakers.ErrorByEqpColumnChart = {
 
         // 핵심: 회전된 라벨 적용
         xRenderer.labels.template.setAll({
-            rotation: -90,
+            rotation: -45,
             centerY: am5.p50,
             centerX: am5.p100,
             paddingRight: 15,
