@@ -6,6 +6,12 @@
 
 <PageTitle>Lamp Lifetime</PageTitle>
 
+<style>
+    .overflow-y-auto {
+        overflow-y: hidden !important;
+    }
+</style>
+
 <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
     <MudIcon Icon="@Icons.Material.Rounded.Highlight" Size="Size.Large" />
     <MudText Typo="Typo.h4">Lamp LifeTime</MudText>
@@ -22,7 +28,7 @@
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="4" md="2">
-            <MudSelect T="string" Label="SDWT (All)" Value="_selectedSdwt" ValueChanged="OnSdwtChanged" Disabled="@(string.IsNullOrEmpty(_selectedSite))" Dense="true" Margin="Margin.Dense" Clearable="true">
+            <MudSelect T="string" Label="SDWT (All)" Required="true" Value="_selectedSdwt" ValueChanged="OnSdwtChanged" Disabled="@(string.IsNullOrEmpty(_selectedSite))" Dense="true" Margin="Margin.Dense" Clearable="true">
                 @foreach (var sdwt in _sdwts)
                 {
                     <MudSelectItem T="string" Value="@sdwt">@sdwt</MudSelectItem>
@@ -32,10 +38,12 @@
         <MudItem xs="12" sm="4" md="3">
             <MudAutocomplete T="string" Label="EQP ID (All)" @bind-Value="_selectedEqpId" SearchFunc="SearchEqpids"
                              ResetValueOnEmptyText="true" CoerceText="false" Dense="true" Margin="Margin.Dense"
-                             Disabled="@(string.IsNullOrEmpty(_selectedSite))" Clearable="true" />
+                             MaxItems="null" Disabled="@(string.IsNullOrEmpty(_selectedSite))" Clearable="true" />
         </MudItem>
         <MudItem xs="6" sm="6" md="2">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OnSearchClicked" Disabled="@(string.IsNullOrEmpty(_selectedSite))" FullWidth="true">SEARCH</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OnSearchClicked"
+                       Disabled="@(string.IsNullOrEmpty(_selectedSdwt))"
+                       FullWidth="true">SEARCH</MudButton>
         </MudItem>
         <MudItem xs="6" sm="6" md="2">
             <MudButton Variant="Variant.Outlined" OnClick="ResetFilters" FullWidth="true">Reset</MudButton>
@@ -71,7 +79,7 @@ else if (_isSearched)
             <PropertyColumn Property="x => x.Ts" Title="Data Collected At" Format="yy-MM-dd HH:mm:ss" />
         </Columns>
         <PagerContent>
-            <MudDataGridPager T="LampLifeDto" />
+            <MudDataGridPager T="LampLifeDto" PageSizeOptions="new int[] { 15, 30, 50 }" />
         </PagerContent>
     </MudDataGrid>
 }
@@ -157,7 +165,7 @@ else
 
     private async Task OnSearchClicked()
     {
-        if (string.IsNullOrEmpty(_selectedSite)) return;
+        if (string.IsNullOrEmpty(_selectedSdwt)) return;
 
         _isLoading = true;
         _isSearched = false;
